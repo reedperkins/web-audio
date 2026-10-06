@@ -54,7 +54,7 @@ Status: DRAFT. `TODO` marks places where I need to decide something.
 | 6 | Sample pads | `PadsDemo` | regions copied onto pads, played from clicks, MIDI or the on-screen keys | the source waveform with selection markers, and the pads |
 | 7 | What's next ×3 | `ClipButton` | a short clip from `public/` | statement slide plus a play button |
 | 7 | One knob, a thousand oscillators | — | — | the swarm code, stepped |
-| 7 | Chaos | `ChaosDemo` | keys play a detuned saw swarm (one `ConstantSourceNode` drives every oscillator's detune) or, toggled from a pad, a granular cloud of the take at the key's pitch; pads mangle the latest recording as grains; K1–K8 and the joystick bend it all, through a crusher and a limiter | oscillator count, scope, and `MpkMini` mirroring the controller |
+| 7 | Chaos | `ChaosDemo` | keys play a detuned saw swarm (one `ConstantSourceNode` drives every oscillator's detune) or, toggled from a pad, a granular cloud of the take at the key's pitch; pads mangle the latest recording as grains; K1–K8 and the joystick bend it all, through a crusher and a limiter; a synced 4-track looper (pads' bank B, keys 1–4) prints it and plays it back | oscillator count, scope, and `MpkMini` mirroring the controller |
 | 8 | Let's play it | `HubDemo` | the shared synth | the hub (see below) |
 
 ---

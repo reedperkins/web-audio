@@ -79,6 +79,12 @@ export const PADS: { note: number; mode: PadMode }[] = [
   { note: 47, mode: 'freeze' },
 ]
 
+// PLACEHOLDER(refine): the pads' other bank (the BANK button) runs the
+// looper (audio/tape.ts): the bottom row is tracks 1–4, top right clears them
+// all. Check these notes against what the controller sends on bank B.
+export const TRACK_PADS = [36, 37, 38, 39]
+export const CLEAR_PAD = 43
+
 // PLACEHOLDER(refine): levels and ranges, tune by ear
 const SWARM_LEVEL = 0.5
 const PURE_LEVEL = 0.3
