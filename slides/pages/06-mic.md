@@ -1,7 +1,5 @@
 ---
 layout: code
-demo: mic
-demoLabel: 6a · Record and play back
 ---
 
 # Other sources

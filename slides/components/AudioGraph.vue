@@ -47,7 +47,7 @@ const nodes = [
 .sub {
   fill: var(--muted);
   font-family: var(--font-mono);
-  font-size: 17px;
+  font-size: 15px;
   text-anchor: middle;
 }
 

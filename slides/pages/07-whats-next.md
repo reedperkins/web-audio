@@ -1,7 +1,5 @@
 ---
 layout: statement
-demo: whats-next
-demoLabel: Vocoder
 # PLACEHOLDER(refine): on-screen text for each idea
 ---
 
@@ -11,8 +9,6 @@ Your voice, played through the synth we just built.
 
 ---
 layout: statement
-demo: whats-next
-demoLabel: Granular synthesis
 ---
 
 # Granular synthesis
@@ -21,8 +17,6 @@ Chop sound into tiny grains and scatter them.
 
 ---
 layout: statement
-demo: whats-next
-demoLabel: Game of Life
 ---
 
 # Game of Life

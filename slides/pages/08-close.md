@@ -1,7 +1,5 @@
 ---
 layout: statement
-demo: ""
-demoLabel: Open the machine
 ---
 
 # Let's play it

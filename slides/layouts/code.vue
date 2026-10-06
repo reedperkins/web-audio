@@ -1,10 +1,9 @@
 <script setup lang="ts">
-// Stepped code with an optional notes column (the `aside` slot) and an
-// optional demo link in the corner.
+// Stepped code with an optional notes column (`::aside::`) and an optional
+// demo under the code (`::demo::`).
 //
 //   ---
 //   layout: code
-//   demo: first-sound
 //   ---
 //   # Title
 //   ```js {1|2|all}
@@ -12,7 +11,8 @@
 //   ```
 //   ::aside::
 //   <StepNote :at="1">...</StepNote>
-defineProps<{ demo?: string; demoLabel?: string }>()
+//   ::demo::
+//   <BeepDemo />
 </script>
 
 <template>
@@ -24,15 +24,14 @@ defineProps<{ demo?: string; demoLabel?: string }>()
     <aside v-if="$slots.aside" class="code-aside">
       <slot name="aside" />
     </aside>
-    <div v-if="demo !== undefined" class="code-demo">
-      <DemoLink :to="demo">{{ demoLabel ?? 'Try it' }}</DemoLink>
+    <div v-if="$slots.demo" class="code-demo">
+      <slot name="demo" />
     </div>
   </div>
 </template>
 
 <style scoped>
 .code-layout {
-  position: relative;
   display: grid;
   grid-template-columns: 1fr;
   column-gap: 2.5rem;
@@ -40,11 +39,11 @@ defineProps<{ demo?: string; demoLabel?: string }>()
 }
 
 .code-layout.has-aside {
-  grid-template-columns: 3fr 2fr;
+  grid-template-columns: max-content minmax(12rem, 1fr);
 }
 
 .code-main :deep(h1) {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .code-main :deep(h1 + p) {
@@ -53,13 +52,21 @@ defineProps<{ demo?: string; demoLabel?: string }>()
   opacity: 1;
 }
 
+.code-main {
+  grid-row: 1;
+}
+
 .code-aside {
-  padding-top: 5.25rem;
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  padding-top: 5rem;
 }
 
 .code-demo {
-  position: absolute;
-  right: 3.5rem;
-  bottom: 2rem;
+  grid-row: 2;
+  grid-column: 1;
+  margin-top: 0.75rem;
+  /* The code sets the column width; the demo fits inside it. */
+  contain: inline-size;
 }
 </style>

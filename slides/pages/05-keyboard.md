@@ -1,7 +1,5 @@
 ---
 layout: code
-demo: keyboard
-demoLabel: 5a · Raw MIDI
 ---
 
 # MIDI comes in
@@ -21,8 +19,6 @@ midi.inputs.forEach((input) => {
 
 ---
 layout: code
-demo: keyboard
-demoLabel: 5b · Numbers → pitch
 ---
 
 # Numbers → pitch
@@ -43,8 +39,6 @@ const mtof = (note) => 440 * 2 ** ((note - 69) / 12)
 
 ---
 layout: code
-demo: keyboard
-demoLabel: 5c · Polyphony
 ---
 
 # One voice per key
@@ -75,8 +69,6 @@ class Voice {
 
 ---
 layout: code
-demo: keyboard
-demoLabel: 5c · Polyphony
 ---
 
 # Polyphony
@@ -101,8 +93,6 @@ function keyUp(note) {
 
 ---
 layout: code
-demo: keyboard
-demoLabel: 5d · Wave types
 ---
 
 # Wave types
@@ -115,8 +105,6 @@ const osc = new OscillatorNode(ctx, { type: 'square', frequency: 220 })
 
 ---
 layout: code
-demo: keyboard
-demoLabel: 5e · Song presets
 # PLACEHOLDER(refine): song presets and what each one plays
 ---
 

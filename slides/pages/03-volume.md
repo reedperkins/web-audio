@@ -1,7 +1,5 @@
 ---
 layout: code
-demo: volume
-demoLabel: 3a · Distortion
 ---
 
 # Too loud
@@ -22,10 +20,12 @@ chord.forEach((frequency) => {
 <StepNote :at="1">Each oscillator swings between −1 and +1: full volume.</StepNote>
 <StepNote :at="2">Add four together and the wave goes past ±1. The speakers clip it: distortion.</StepNote>
 
+::demo::
+
+<ClipDemo />
+
 ---
 layout: code
-demo: volume
-demoLabel: 3b · Gain fix
 ---
 
 # Turn it down
@@ -59,18 +59,21 @@ chord.forEach((frequency) => {
 <StepNote :at="0">Before: every oscillator goes straight to the speakers.</StepNote>
 <StepNote :at="1">After: they all go through one <code>GainNode</code> at 0.2. The chord fits back inside ±1.</StepNote>
 
+::demo::
+
+<VolumeDemo />
+
 ---
 layout: code
-demo: volume
-demoLabel: 3c · Volume slider
 ---
 
 # Settings are AudioParams
 
-```js {1|2-4|3}
+```js {1|2-5|3-4}
 // A slider calls this as it moves
 function setVolume(value) {
-  volume.gain.setTargetAtTime(value, ctx.currentTime, 0.05)
+  const now = ctx.currentTime
+  volume.gain.setTargetAtTime(value, now, 0.05)
 }
 ```
 
@@ -79,3 +82,7 @@ function setVolume(value) {
 <StepNote :at="0"><code>gain</code> isn't a plain number. It's an <code>AudioParam</code>.</StepNote>
 <StepNote :at="1">You can schedule an <code>AudioParam</code> and smooth it over time.</StepNote>
 <StepNote :at="2">Glide toward the new value, starting now. No jumps, no clicks.</StepNote>
+
+::demo::
+
+<VolumeDemo hold />

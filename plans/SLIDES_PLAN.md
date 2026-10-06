@@ -98,7 +98,7 @@ An agent can't hear audio, so every audio task has two checks: an automated one 
 - **Done when:** `npm --prefix slides run dev` serves the deck, and the build passes.
 - **Commit:** "Scaffold Slidev deck"
 
-### [ ] 1.2 Offline config and preview
+### [x] 1.2 Offline config and preview
 - **Depends on:** 1.1
 - **Goal:** the deck build makes zero network requests, and one command serves it for rehearsal.
 - **Steps:** headmatter with `routerMode: hash`, `fonts: { provider: none }`, a local favicon, a pinned `colorSchema`, and unused features turned off (`drawings`, `record`, `monaco`, `contextMenu`, `presenter`, …; check sli.dev for current names). Add a `preview` script that serves `dist/`.
@@ -123,7 +123,7 @@ An agent can't hear audio, so every audio task has two checks: an automated one 
 
 ## Phase 2: Foundations (Must)
 
-### [ ] 2.1 Layouts
+### [x] 2.1 Layouts
 - **Depends on:** 1.1
 - **Goal:** the `statement` and `code` layouts, in plain styling. The `code` layout has a `::demo::` slot that renders under the code, alongside the existing `::aside::` notes column.
 - **Placeholder OK:** type scale, spacing, proportions. Both layouts and their slots must exist.
@@ -146,21 +146,21 @@ An agent can't hear audio, so every audio task has two checks: an automated one 
 - **Done when:** stepping forward and back moves the highlight and the notes together.
 - **Commit:** "Add code stepping and step notes"
 
-### [ ] 2.4 Audio engine and `useDemo()`
+### [x] 2.4 Audio engine and `useDemo()`
 - **Depends on:** 1.1
 - **Docs:** MDN `AudioContext`, `resume()`, `GainNode`, `AnalyserNode`, autoplay policy; sli.dev slide hooks
 - **Goal:** `audio/audio.ts` as in [The audio engine](#the-audio-engine) and `audio/useDemo.ts` as in [The `useDemo()` contract](#the-usedemo-contract). Build on the prototype in `audio/audio.ts` (currently master at 0.3, no analyser).
 - **Done when:** importing the module twice gives the same context; the dev global exists in dev and not in the build; a probe demo logs enter/leave in the right order while navigating, and doesn't log enter for a neighbouring slide that's only preloaded; the slide-leave check passes for a demo whose `leave` does nothing.
 - **Commit:** "Add audio engine and useDemo"
 
-### [ ] 2.5 Demo building blocks: `PlayButton` and `Slider`
+### [x] 2.5 Demo building blocks: `PlayButton` and `Slider`
 - **Depends on:** 2.4
 - **Goal:** `PlayButton` (generalized from the prototype `BeepButton`: emits `play`, shows a playing state) and `Slider` (`v-model`), both using `noFocus`.
 - **Placeholder OK:** their look.
 - **Done when:** the navigation check passes on a test slide with both.
 - **Commit:** "Add play button and slider"
 
-### [ ] 2.6 Remove the demo-app links
+### [x] 2.6 Remove the demo-app links
 - **Depends on:** 2.1
 - **Goal:** no trace of the separate demo app in the deck.
 - **Steps:** delete `components/DemoLink.vue`, the `demo`/`demoLabel` props from `layouts/code.vue`, and the `demo:`/`demoLabel:` frontmatter on every slide.
@@ -175,13 +175,13 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 
 **Placeholder OK for all:** on-screen text, how the code reads, and the look of every demo picture. Sound and lifecycle must be solid.
 
-### [ ] 3.1 Section 1: What is Web Audio?
+### [x] 3.1 Section 1: What is Web Audio?
 - **Depends on:** 2.1
 - **Goal:** 1a title, 1b the two points with a boxes-and-arrows graphic.
 - **Done when:** screenshots look right.
 - **Commit:** "Add intro section"
 
-### [ ] 3.2 Section 2: First sound
+### [x] 3.2 Section 2: First sound
 - **Depends on:** 2.3, 2.5
 - **Docs:** MDN `OscillatorNode`, `AudioScheduledSourceNode.start()` / `stop()`, `currentTime`
 - **Goal:** 2a `BeepDemo` (play button under the code; replaces the prototype `BeepButton`) and 2b `ClockDemo` with a `Timeline` of the four start times and a playhead that follows `ctx.currentTime`.
@@ -189,7 +189,7 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 - **Listen for:** a clean 1-second tone; an even four-note arpeggio.
 - **Commit:** "Add first sound demos"
 
-### [ ] 3.3 Section 3: Volume
+### [x] 3.3 Section 3: Volume
 - **Depends on:** 3.2
 - **Docs:** MDN `GainNode`, `AudioParam.setTargetAtTime`
 - **Goal:** 3a `ClipDemo` with `WaveSum` (four sines, their sum past ±1, clipped flat tops, drawn from the math); 3b and 3c `VolumeDemo` with `SignalChain` (osc → gain → out), a play button and a volume `Slider` using `setTargetAtTime`.
@@ -314,3 +314,4 @@ Add a dated line when a task is approved: the task number, and anything worth re
 
 - 2026-10-05: dropped the separate demo app; demos now live on the slides. Prototype: `audio/audio.ts` and `components/BeepButton.vue` on the "One beep" slide.
 - 2026-10-05: 1.1, 1.3, 1.4, 2.2, 2.3 approved (built before the plan changed). Sections already have slides with text and code; Phase 3 adds their demos.
+- 2026-10-05: 1.2, 2.1, 2.4, 2.5, 2.6, 3.1, 3.2, 3.3 approved. `useDemo()` returns `out` as a `shallowRef` (connect to `out.value`), since it's swapped for a fresh node on each leave. The code layout's notes column spans the full height and the demo sits under the code only, so tall notes can't push the demo off the slide. 2b has a note-length slider (starts clean at 0.1 s, overlaps up to the slide's 0.75 s) to lead into 3a. Slide 8 code splits out `const now`. Still overflowing, for their own tasks: slides 11 and 19 (long code lines), 15 (bottom). `grep "demo:"` from 2.6 now matches the `::demo::` slot.

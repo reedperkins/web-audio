@@ -1,7 +1,5 @@
 ---
 layout: statement
-demo: envelope
-demoLabel: 4a · The click
 ---
 
 # Click.
@@ -10,8 +8,6 @@ A tone that starts and stops instantly makes a pop.
 
 ---
 layout: code
-demo: envelope
-demoLabel: 4b · ADSR editor
 ---
 
 # Shape over time
@@ -30,8 +26,6 @@ A piano and an organ can play the same note. What's different is how the volume 
 
 ---
 layout: code
-demo: envelope
-demoLabel: 4b · ADSR editor
 ---
 
 # An envelope is a scheduled gain
@@ -60,8 +54,6 @@ function noteOff(gain, t) {
 
 ---
 layout: code
-demo: envelope
-demoLabel: 4c · Presets
 # PLACEHOLDER(refine): envelope preset values, tune by ear (keep in sync with the demo's presets)
 ---
 

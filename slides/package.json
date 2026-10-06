@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "slidev",
     "build": "slidev build",
-    "format": "slidev format"
+    "format": "slidev format",
+    "preview": "vite preview --outDir dist --port 4173 --strictPort"
   },
   "dependencies": {
     "@slidev/cli": "^53.0.0",

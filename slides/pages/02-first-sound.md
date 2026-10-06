@@ -18,12 +18,12 @@ osc.stop(ctx.currentTime + 1)
 <StepNote :at="2">Start now. Stop one second from now.</StepNote>
 <StepNote :at="3">A source, a destination, and a wire. That's a whole audio graph.</StepNote>
 
-<BeepButton />
+::demo::
+
+<BeepDemo />
 
 ---
 layout: code
-demo: first-sound
-demoLabel: 2b · Arpeggio
 ---
 
 # The audio clock
@@ -46,3 +46,7 @@ notes.forEach((frequency, i) => {
 <StepNote :at="2">One oscillator per note.</StepNote>
 <StepNote :at="3">Each one starts 0.1 s after the last.</StepNote>
 <StepNote :at="4">We hand the browser a schedule. Its clock plays it on time, even if JavaScript is busy.</StepNote>
+
+::demo::
+
+<ClockDemo />

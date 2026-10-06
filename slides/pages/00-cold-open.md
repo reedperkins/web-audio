@@ -1,8 +1,6 @@
 ---
 layout: statement
-demo: cold-open
-demoLabel: Cold open
-# PLACEHOLDER(refine): on-screen text; whether the cold open happens (DEMOS_PLAN 4.1)
+# PLACEHOLDER(refine): on-screen text; whether the cold open happens (SLIDES_PLAN 4.1)
 ---
 
 # Everything you're hearing is live

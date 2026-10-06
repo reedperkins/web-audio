@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// One big idea in a few words, with an optional demo link underneath.
-defineProps<{ demo?: string; demoLabel?: string }>()
+// One big idea in a few words, with an optional demo underneath (`::demo::`).
 </script>
 
 <template>
@@ -9,8 +8,8 @@ defineProps<{ demo?: string; demoLabel?: string }>()
     <div class="statement-body">
       <slot />
     </div>
-    <div v-if="demo !== undefined" class="statement-demo">
-      <DemoLink :to="demo">{{ demoLabel ?? 'Try it' }}</DemoLink>
+    <div v-if="$slots.demo" class="statement-demo">
+      <slot name="demo" />
     </div>
   </div>
 </template>
