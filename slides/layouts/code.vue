@@ -16,7 +16,6 @@
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): code layout proportions and spacing -->
   <div class="slidev-layout code-layout" :class="{ 'has-aside': $slots.aside }">
     <div class="code-main">
       <slot />
@@ -31,6 +30,7 @@
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): code layout proportions and spacing */
 .code-layout {
   display: grid;
   grid-template-columns: 1fr;

@@ -17,7 +17,6 @@ const label = computed(() => {
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): MIDI status look -->
   <div class="midi-status" :class="{ connected }">
     <span class="dot" />
     {{ label }}
@@ -25,6 +24,7 @@ const label = computed(() => {
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): MIDI status look */
 .midi-status {
   display: inline-flex;
   align-items: center;

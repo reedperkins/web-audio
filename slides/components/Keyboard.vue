@@ -75,7 +75,6 @@ defineExpose({ upAll })
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): on-screen keyboard look -->
   <div class="keyboard" :style="{ '--whites': whites.length }">
     <div
       class="keys"
@@ -112,6 +111,7 @@ defineExpose({ upAll })
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): on-screen keyboard look */
 .keyboard {
   display: flex;
   flex-direction: column;

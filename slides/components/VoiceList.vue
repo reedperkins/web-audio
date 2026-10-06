@@ -42,7 +42,6 @@ const sounding = () => boxes.value.filter((b) => !b.released).length
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): voice boxes look -->
   <div class="voice-list">
     <div class="count">{{ sounding() }} {{ sounding() === 1 ? 'voice' : 'voices' }}</div>
     <TransitionGroup tag="div" class="boxes">
@@ -61,6 +60,7 @@ const sounding = () => boxes.value.filter((b) => !b.released).length
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): voice boxes look */
 .voice-list {
   margin-top: 1rem;
 }

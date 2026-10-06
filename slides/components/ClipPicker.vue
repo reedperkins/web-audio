@@ -11,7 +11,6 @@ const pick = (s: Sample) => (picked.value = s)
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): clip picker look -->
   <div class="clip-picker" :class="{ compact, inline }">
     <span v-if="!compact" class="clip-picker-label">buffer</span>
     <button
@@ -28,6 +27,7 @@ const pick = (s: Sample) => (picked.value = s)
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): clip picker look */
 .clip-picker {
   display: flex;
   flex-direction: column;

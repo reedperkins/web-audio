@@ -8,7 +8,6 @@ defineEmits<{ play: [] }>()
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): play button look -->
   <button v-no-focus class="play-button" :class="{ playing }" @click="$emit('play')">
     <span class="play-button-icon">{{ playing ? (pauses ? '❚❚' : '■') : '▶' }}</span>
     <slot>Play</slot>
@@ -16,6 +15,7 @@ defineEmits<{ play: [] }>()
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): play button look */
 .play-button {
   display: inline-flex;
   align-items: center;

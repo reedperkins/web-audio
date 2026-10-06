@@ -24,7 +24,6 @@ const isCurrent = (p: Envelope) =>
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): preset card look -->
   <div class="adsr-presets">
     <button
       v-for="preset in presets"
@@ -45,6 +44,7 @@ const isCurrent = (p: Envelope) =>
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): preset card look */
 .adsr-presets {
   display: flex;
   gap: 0.6rem;

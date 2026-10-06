@@ -10,7 +10,6 @@ defineProps<{ nodes: { key: string; label: string }[] }>()
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): signal chain look -->
   <div class="signal-chain">
     <template v-for="(node, i) in nodes" :key="node.key">
       <span v-if="i" class="wire">→</span>
@@ -29,6 +28,7 @@ defineProps<{ nodes: { key: string; label: string }[] }>()
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): signal chain look */
 .signal-chain {
   display: flex;
   align-items: center;

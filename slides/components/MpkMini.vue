@@ -92,7 +92,6 @@ function releasePad(note: number) {
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): MPK mini look -->
   <div class="mpk">
     <div class="mpk-top">
       <div class="mpk-left">
@@ -151,6 +150,7 @@ function releasePad(note: number) {
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): MPK mini look */
 .mpk {
   display: flex;
   flex-direction: column;

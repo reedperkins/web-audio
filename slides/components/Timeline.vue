@@ -24,7 +24,6 @@ const ticks = computed(() => {
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): timeline look -->
   <svg class="timeline" :viewBox="`-${GUTTER} -6 ${W + GUTTER + 24} ${starts.length * ROW + 40}`">
     <g v-for="(t, i) in starts" :key="i">
       <rect class="bar" :class="{ on: playhead !== null && playhead >= t && playhead < t + length }"
@@ -42,6 +41,7 @@ const ticks = computed(() => {
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): timeline look */
 .timeline {
   width: 100%;
   color: var(--ink);

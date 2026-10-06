@@ -49,7 +49,6 @@ const columns = computed(() => {
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): raw-MIDI display -->
   <div class="midi-log">
     <MidiStatus />
     <table :key="last?.id" class="frame" :class="{ empty: !last }">
@@ -86,6 +85,7 @@ const columns = computed(() => {
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): raw-MIDI display */
 .midi-log {
   display: flex;
   flex-direction: column;

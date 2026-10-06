@@ -29,7 +29,6 @@ const clipped = computed(() => path(t => Math.max(-1, Math.min(1, sum(t)))))
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): wave sum look -->
   <svg class="wave-sum" :viewBox="`0 0 ${W} ${H}`" preserveAspectRatio="none">
     <rect class="limit-band" x="0" :y="y(1)" :width="W" :height="y(-1) - y(1)" />
     <path v-for="(d, i) in waves" :key="i" class="sine" :d="d" />
@@ -43,6 +42,7 @@ const clipped = computed(() => path(t => Math.max(-1, Math.min(1, sum(t)))))
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): wave sum look */
 .wave-sum {
   width: 100%;
   height: 9rem;

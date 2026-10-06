@@ -16,7 +16,6 @@ withDefaults(
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): slider look -->
   <label class="slider">
     <span v-if="label" class="slider-label">{{ label }}</span>
     <input
@@ -32,6 +31,7 @@ withDefaults(
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): slider look */
 .slider {
   /* Slidev's default theme styles bare labels; undo it. */
   border: 0;

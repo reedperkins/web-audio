@@ -14,13 +14,13 @@ const state = computed(() => {
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): step note styling -->
   <div class="step-note" :class="state">
     <slot />
   </div>
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): step note styling */
 .step-note {
   margin-bottom: 0.9em;
   padding-left: 0.75em;

@@ -3,7 +3,6 @@
 </script>
 
 <template>
-  <!-- PLACEHOLDER(refine): statement layout type scale and spacing -->
   <div class="slidev-layout statement-layout">
     <div class="statement-body">
       <slot />
@@ -15,6 +14,7 @@
 </template>
 
 <style scoped>
+/* PLACEHOLDER(refine): statement layout type scale and spacing */
 .statement-layout {
   display: flex;
   flex-direction: column;
