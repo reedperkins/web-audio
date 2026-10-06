@@ -117,20 +117,9 @@ layout: code
 # Wave types
 
 ```js
-const osc = new OscillatorNode(ctx, { type: 'square', frequency: 220 })
+const osc = new OscillatorNode(ctx, { type: wave, frequency })
 ```
 
-<WaveShapes class="mt-12" />
+::demo::
 
----
-layout: code
-# PLACEHOLDER(refine): song presets and what each one plays
----
-
-# Wave + envelope = an instrument
-
-| Preset | Wave | Envelope | Plays |
-|--------|------|----------|-------|
-| Zelda | square | Organ | a Zelda riff |
-| Electronic | sawtooth | Stab | TBD |
-| TBD | triangle | Pluck | TBD |
+<WaveDemo />

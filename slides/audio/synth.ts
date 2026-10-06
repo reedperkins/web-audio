@@ -1,3 +1,4 @@
+import { ref } from 'vue'
 import { ctx } from './audio'
 import { env, noteOff, noteOn } from './envelope'
 import { onNote } from './input'
@@ -24,11 +25,15 @@ export function playInto(out: AudioNode | null) {
   if (out) bus.connect(out)
 }
 
+// The synth's oscillator type. The wave picker and the songs set it; every
+// new note reads it.
+export const wave = ref<OscillatorType>('sine')
+
 class Voice {
   osc: OscillatorNode
   amp: GainNode
   constructor(frequency: number) {
-    this.osc = new OscillatorNode(ctx, { frequency })
+    this.osc = new OscillatorNode(ctx, { type: wave.value, frequency })
     this.amp = new GainNode(ctx, { gain: 0 })
     this.osc.connect(this.amp).connect(bus)
     noteOn(this.amp.gain, ctx.currentTime)

@@ -238,7 +238,7 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 
 ### [ ] 3.8 Section 5: Keyboard demos
 - **Depends on:** 3.6, 3.7
-- **Goal:** 5a `MidiLog`, 5b `OctaveDemo`, 5c `VoicesDemo`, 5d `WaveDemo` (with a live `Scope` from the analyser), 5e `InstrumentDemo` (Zelda first).
+- **Goal:** 5a `MidiLog`, 5b `OctaveDemo`, 5c `VoicesDemo`, 5d `WaveDemo` (with a live `Scope` from the analyser, and the song presets, Zelda first).
 - **Placeholder OK:** every picture, the song presets and melodies.
 - **Done when:** screenshots after simulated notes show each picture updating; the scope shows four clearly different shapes in 5d.
 - **Listen for:** the Zelda preset sounds recognizably "8-bit."
@@ -262,7 +262,7 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 ### [ ] 4.1 Section 0: Cold open sequencer
 - **Depends on:** 3.5
 - **Docs:** MDN "Advanced techniques: creating and sequencing audio" (lookahead scheduling)
-- **Goal:** `audio/sequencer.ts` and `SequencerDemo`: a chiptune loop that starts on the first click, with a step grid and tempo control. Notes are scheduled a little ahead on the audio clock. The riff button in 5e reuses the sequencer.
+- **Goal:** `audio/sequencer.ts` and `SequencerDemo`: a chiptune loop that starts on the first click, with a step grid and tempo control. Notes are scheduled a little ahead on the audio clock. The song buttons in 5d use the sequencer.
 - **Placeholder OK:** the grid and control look, and the loop (a simple 8-step melody plus bass). Scheduler timing must be solid.
 - **Done when:** render check of the scheduler timing at two tempos; changing the tempo mid-loop causes no gap or double note.
 - **Listen for:** steady timing; tempo and note changes are audible right away.

@@ -45,8 +45,7 @@ Status: DRAFT. `TODO` marks places where I need to decide something.
 | 5 | MIDI comes in | `MidiLog` | the shared synth | live list of incoming messages, bytes labeled |
 | 5 | Numbers → pitch | `OctaveDemo` | the shared synth | `OctaveKeys` lights the pressed key and shows `mtof(n)` in Hz |
 | 5 | One voice per key / Polyphony | `VoicesDemo` | the shared synth | one box per active voice, appearing on key down and fading on release |
-| 5 | Wave types | `WaveDemo` | the shared synth | `WaveShapes` as a picker for the synth's wave, plus a live scope |
-| 5 | Wave + envelope | `InstrumentDemo` | rows set wave + envelope; "play riff" runs the riff through the sequencer | the table as a control |
+| 5 | Wave types | `WaveDemo` | the shared synth; song buttons set wave + envelope and loop a melody through the sequencer | the synth as graph nodes (wave picker → ADSR → live scope) |
 | 6 | Other sources | `MicDemo` | record, then play with Reverse and Speed toggles | the recorded waveform, which flips when reversed |
 | 7 | What's next ×3 | `ClipButton` | a short clip from `public/` | statement slide plus a play button |
 | 8 | Let's play it | `HubDemo` | the shared synth | the hub (see below) |
@@ -200,14 +199,8 @@ All of these play the shared synth.
   function noteOn(note) { voices.set(note, new Voice(mtof(note))) }
   function noteOff(note) { voices.get(note)?.release(); voices.delete(note) }
   ```
-- **5d Wave types (`WaveDemo`):** sine, square, sawtooth, triangle. The wave pictures pick the synth's wave, and a live scope shows the real shape.
-- **5e Song presets (`InstrumentDemo`):** wave + envelope pairs that sound like something familiar. Clicking a row loads it; "play riff" plays the riff through the sequencer.
-
-  | Preset | Wave | Envelope | Play |
-  |--------|------|----------|------|
-  | Zelda | square | Organ-ish | `TODO` which theme/riff |
-  | `TODO` electronic | sawtooth | Stab | `TODO` |
-  | `TODO` | triangle | Pluck | `TODO` |
+- **5d Wave types (`WaveDemo`):** sine, square, sawtooth, triangle. The synth drawn as its graph: the wave pictures pick the synth's wave, the ADSR editor sets the envelope, and a live scope shows the real shape.
+  Songs on the same slide set the wave and envelope, then loop a melody through the sequencer: Zelda (square), Mountain King (sawtooth), Für Elise (triangle), Ode to Joy (sine). Changes while a song plays are heard on the next notes.
 
 - **Risk:** the MIDI device or permission fails → open the on-screen keyboard and keep going.
 
