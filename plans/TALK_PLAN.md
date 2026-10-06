@@ -40,9 +40,8 @@ Status: DRAFT. `TODO` marks places where I need to decide something.
 | 3 | Too loud | `ClipDemo` | four oscillators, no gain | four sines, their sum crossing ±1, and the clipped flat tops (drawn from the math) |
 | 3 | Turn it down / AudioParams | `VolumeDemo` | oscillators → `GainNode` → out | signal chain osc → gain → out, with play button and a volume slider on the gain node (`setTargetAtTime`) |
 | 4 | Click. | `ClickDemo` | an instant start/stop, and the same tone with a short ramp | zoomed waveform of the first few ms: a cliff vs. a ramp |
-| 4 | Shape over time | `AdsrDemo` | plays a note when a handle is let go | drag-and-drop ADSR editor with a playhead; edits the shared synth's envelope |
+| 4 | Shape over time | `AdsrDemo` | plays a note when a handle or preset card is let go; hold the button or Enter to play | drag-and-drop ADSR editor with a playhead, plus a row of preset cards (A/D/S/R as bars); edits the shared synth's envelope |
 | 4 | Scheduled gain | `AdsrDemo` (small) | play button | ADSR curve highlighting the segment that matches the current step |
-| 4 | Presets | `PresetsDemo` | click a row to play that preset | the table is the control; the curve morphs to match |
 | 5 | MIDI comes in | `MidiLog` | the shared synth | live list of incoming messages, bytes labeled |
 | 5 | Numbers → pitch | `OctaveDemo` | the shared synth | `OctaveKeys` lights the pressed key and shows `mtof(n)` in Hz |
 | 5 | One voice per key / Polyphony | `VoicesDemo` | the shared synth | one box per active voice, appearing on key down and fading on release |
@@ -151,7 +150,7 @@ Code on slides is written to teach: short and plain, no imports, cleanup or erro
 - **4a The click (`ClickDemo`):** a tone that starts and stops instantly makes an audible click; the same tone with a short ramp doesn't. A zoomed waveform shows the cliff vs. the ramp. (About 10 seconds.)
 - **4b Shape over time (`AdsrDemo`):** a drag-and-drop ADSR editor. Each time you let go of a point it plays a note, and a playhead moves along the curve as it plays. It edits the shared synth's envelope.
   - **Say:** "What makes a piano sound different from an organ isn't only the tone. It's how the volume changes over time."
-- **4c Presets (`PresetsDemo`):** the same oscillator, played through different envelope presets. Clicking a table row plays it and loads it into the shared synth.
+- **Presets (on the 4b slide, `AdsrPresets`):** the same oscillator, played through different envelope presets. A row of cards under the editor, each showing A, D and R as bars as long as the time and S as a bar as long as the level. Clicking a card plays it and loads it into the shared synth.
 
   | Preset | A | D | S | R | Feel |
   |--------|---|---|---|---|------|

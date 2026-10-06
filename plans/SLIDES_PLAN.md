@@ -205,6 +205,7 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 - **Done when:** render check: peak at the attack time, settles at sustain, reaches zero after release, and releasing mid-attack causes no jump.
 - **Listen for:** a click without the ramp; none with it.
 - **Commit:** "Add envelope engine and click demo"
+- **Status:** `audio/envelope.ts` exists (`env`, `noteOn`/`noteOff`, `envelopeAt`, the time scale). Left: `ClickDemo` and the render check.
 
 ### [ ] 3.5 Shared synth
 - **Depends on:** 3.4
@@ -217,11 +218,12 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 
 ### [ ] 3.6 ADSR editor and presets
 - **Depends on:** 3.5
-- **Goal:** `AdsrEditor` (`v-model` on the synth's `env`; plays a note when a point is let go), 4b `AdsrDemo`, the small curve on the code slide that highlights the segment for the current step, and 4c `PresetsDemo` (the table rows play and load presets from `audio/presets.ts`).
+- **Goal:** `AdsrEditor` (`v-model` on the synth's `env`; plays a note when a point is let go), 4b `AdsrDemo` (a hold-to-play button and the Enter key play a note through the envelope: key down = `noteOn`, key up = `noteOff`), the small curve on the code slide that highlights the segment for the current step, and the preset cards on the 4b slide (`AdsrPresets`; clicking one plays and loads a preset from `audio/presets.ts`).
 - **Placeholder OK:** handle feel, curve drawing, labels, preset values. The `v-model` contract and play-on-release must work.
 - **Done when:** a screenshot after a simulated drag shows the new shape, and the next note's envelope matches it.
 - **Listen for:** each preset sounds clearly different (organ, pluck, stab, percussive, pad).
 - **Commit:** "Add ADSR editor and presets"
+- **Status:** editor, `AdsrDemo` (button + Enter) and `AdsrPresets` built. `env` lives in `audio/envelope.ts` until 3.5 adds `synth.ts`. Left: the small step-highlighting curve on the code slide, and the "next note matches" check done by measuring the note (so far only through the playhead and labels).
 
 ### [ ] 3.7 Input: MIDI and the on-screen keyboard
 - **Depends on:** 3.5
@@ -287,7 +289,7 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 - **Done when:** a screenshot during a note shows the pulse.
 - **Commit:** "Add hub wire pulse"
 
-### [ ] 4.5 Envelope playhead
+### [x] 4.5 Envelope playhead
 - **Depends on:** 3.6
 - **Goal:** a playhead that moves along the ADSR curve as a note plays.
 - **Placeholder OK:** its look. It must track the envelope phase correctly.
@@ -315,3 +317,4 @@ Add a dated line when a task is approved: the task number, and anything worth re
 - 2026-10-05: dropped the separate demo app; demos now live on the slides. Prototype: `audio/audio.ts` and `components/BeepButton.vue` on the "One beep" slide.
 - 2026-10-05: 1.1, 1.3, 1.4, 2.2, 2.3 approved (built before the plan changed). Sections already have slides with text and code; Phase 3 adds their demos.
 - 2026-10-05: 1.2, 2.1, 2.4, 2.5, 2.6, 3.1, 3.2, 3.3 approved. `useDemo()` returns `out` as a `shallowRef` (connect to `out.value`), since it's swapped for a fresh node on each leave. The code layout's notes column spans the full height and the demo sits under the code only, so tall notes can't push the demo off the slide. 2b has a note-length slider (starts clean at 0.1 s, overlaps up to the slide's 0.75 s) to lead into 3a. Slide 8 code splits out `const now`. Still overflowing, for their own tasks: slides 11 and 19 (long code lines), 15 (bottom). `grep "demo:"` from 2.6 now matches the `::demo::` slot.
+- 2026-10-05: 4.5 approved (built with 3.6, ahead of the remaining Must tasks; the playhead dot shows the real level, so a release mid-attack drops from wherever the volume was). 3.4 and 3.6 partly done, see their status lines. The presets table slide is gone: the presets are cards under the ADSR editor on 4b, so later slides moved up one. Enter is the ADSR trigger key: Slidev only binds it in the overview, and it's not a letter key. Slide 11 fixed (wrapped the long lines, code at 1rem on that slide); still overflowing: slides 14 (bottom) and 18 (long code lines). Editor time axis uses a square-root scale (shared with the preset bars) so ms-short times stay grabbable.
