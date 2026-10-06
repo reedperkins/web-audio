@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "mdn": {
+      "type": "http",
+      "url": "https://mcp.mdn.mozilla.net/"
+    },
+    "slidev": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["slidev", "mcp", "slides.md"]
+    }
+  }
+}

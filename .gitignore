@@ -1,0 +1,7 @@
+# Private planning, prototypes, and experiments
+workbench/
+
+node_modules/
+dist/
+.DS_Store
+.claude/settings.local.json
