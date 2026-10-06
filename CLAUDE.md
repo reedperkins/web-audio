@@ -1,6 +1,6 @@
 # Web Audio talk
 
-A 20-minute Utah JS talk introducing the Web Audio API, built as one Slidev deck
+A Utah JS talk (up to 40 minutes) introducing the Web Audio API, built as one Slidev deck
 in `slides/`. The demos run on the slides themselves: each demo is a Vue
 component on the slide whose code it plays. Rules in `slides/CLAUDE.md`.
 

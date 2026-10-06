@@ -1,6 +1,6 @@
 # Talk Plan
 
-**Talk:** Web Audio at Utah JS · 20 min · JS devs plus some non-technical folks
+**Talk:** Web Audio at Utah JS · up to 40 min · JS devs plus some non-technical folks
 **Concept:** "Build the machine." The talk is one Slidev deck, and the demos run on the slides themselves. Each section explains one part of a synth, shows the code, and plays it right there. At the end the whole machine is drawn as an audio graph (the hub) on a slide, and I play it.
 
 This file covers what the talk says and shows, plus the process the build follows. The task list is `SLIDES_PLAN.md`.
@@ -46,7 +46,12 @@ Status: DRAFT. `TODO` marks places where I need to decide something.
 | 5 | Numbers → pitch | `OctaveDemo` | the shared synth | `OctaveKeys` lights the pressed key and shows `mtof(n)` in Hz |
 | 5 | One voice per key / Polyphony | `VoicesDemo` | the shared synth | one box per active voice, appearing on key down and fading on release |
 | 5 | Wave types | `WaveDemo` | the shared synth; song buttons set wave + envelope and loop a melody through the sequencer | the synth as graph nodes (wave picker → ADSR → live scope) |
-| 6 | Other sources | `MicDemo` | record, then play with Reverse and Speed toggles | the recorded waveform, which flips when reversed |
+| 6 | A file is a buffer | `BufferDemo` | one decoded clip | the buffer's waveform with a playhead, plus its size |
+| 6 | The mic | `MicDemo` | live mic, then a recording | scrolling live waveform; the recording's waveform once captured |
+| 6 | Play it differently | `SamplerDemo` | any clip or the recording, through reverse / rate / detune / loop | big waveform that flips on reverse, with loop handles and a playhead moving at the playback rate |
+| 6 | Pitch without speed ×3 (chop, fade, overlap) | `StretchDemo` (`stage`) | any clip through the grain engine, built up a slide at a time; plain on the last | the signal chain as nodes (clip picker, speed, then pitch and window picker, scope) and `StretchView`: the original and the stretched output, zoomable, with each grain's window, its drift from read to play, and the sounding grain |
+| 6 | Grains in code | — | — | the `grain()` code with step notes |
+| 6 | Sample pads | `PadsDemo` | regions copied onto pads, played from clicks, MIDI or the on-screen keys | the source waveform with selection markers, and the pads |
 | 7 | What's next ×3 | `ClipButton` | a short clip from `public/` | statement slide plus a play button |
 | 8 | Let's play it | `HubDemo` | the shared synth | the hub (see below) |
 
@@ -62,12 +67,12 @@ Status: DRAFT. `TODO` marks places where I need to decide something.
 | 3 | Volume | 2.5 |
 | 4 | Envelope | 3.5 |
 | 5 | Keyboard | 4 |
-| 6 | Other sources | 2 |
+| 6 | Other sources | 6 |
 | 7 | What's next | 1.5 |
 | 8 | Finale & close | 1 |
-| | **Total** | **20** |
+| | **Total** | **24** |
 
-No slack is built in. If something runs long, cut from section 6 or 7 first.
+The talk can run up to 40 minutes, so there is room to grow. If something runs long, cut from section 6 or 7 first.
 
 ---
 
@@ -204,20 +209,91 @@ All of these play the shared synth.
 
 - **Risk:** the MIDI device or permission fails → open the on-screen keyboard and keep going.
 
-### 6. Other sources: Mic (about 2 min)
+### 6. Other sources: files and the mic (about 6 min)
 
-- **Demo (`MicDemo`):** record a few seconds of an audience volunteer, then play it back reversed and/or sped up. The recorded waveform is drawn, and flips when reversed.
+Every clip is vendored in `slides/public/samples/` (credits in `CREDITS.md` there), so the section runs offline. Clips: Apollo 11 "one small step" (speech), a CC0 drum loop, a Salamander piano C4 (CC BY, needs credit), and a backup "hello" recording for the mic. The buffers live in `audio/samples.ts`, shared by every slide in the section, so a mic recording made on 6b shows up in 6c's picker.
+
+- **6a A file is a buffer (`BufferDemo`):** fetch and decode one clip, then play it. The picture is the `AudioBuffer` itself: its waveform, drawn from `getChannelData`, with a playhead, plus its size (channels, sample rate, sample count).
   ```js
-  buffer.getChannelData(0).reverse()   // backwards (do this before handing it to a source)
+  const response = await fetch('/samples/small-step.mp3')
+  const data = await response.arrayBuffer()
+  const buffer = await ctx.decodeAudioData(data)
+
   const source = new AudioBufferSourceNode(ctx, { buffer })
-  source.playbackRate.value = 1.5      // chipmunk
   source.connect(ctx.destination)
   source.start()
   ```
+  - **Say:** "An MP3 decodes to plain arrays of numbers between −1 and 1. Six hundred thousand of them for this one."
+- **6b The mic (`MicDemo`):** two strips, one above the other. **Live:** `getUserMedia` → `MediaStreamAudioSourceNode` → an analyser, drawn as a waveform scrolling by (`LiveWave`). **Recorded:** Record captures up to 5 s with `MediaRecorder`; `stop()` hands over one complete file, `decodeAudioData` turns it into an `AudioBuffer`, and it's drawn and playable below. The recording (mixed to mono) joins the clip list as "Your recording" and is picked, so 6c opens on it.
+  ```js
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+  const mic = new MediaStreamAudioSourceNode(ctx, { mediaStream: stream })
+  mic.connect(analyser) // to see it, not to the speakers
+  const recorder = new MediaRecorder(stream)
+  recorder.ondataavailable = async (e) => {
+    const data = await e.data.arrayBuffer()
+    const buffer = await ctx.decodeAudioData(data)
+  }
+  recorder.start() // then recorder.stop()
+  ```
+  - **Say:** "Live, there's no future to read from: you can't reverse it or speed it up. Record it, and it's a buffer like any other."
+  - The mic never reaches the speakers (no monitoring), so there's no feedback on stage. It turns on only from the "Turn on mic" button, whose hint says Chrome will ask first, and it's switched off (tracks stopped) on leaving the slide.
+  - **Risk:** the mic or permission fails → the slide says so, and the "hello" backup clip takes the recording's place below and on 6c.
+- **6c Play it differently (`SamplerDemo`):** the clip picker (`ClipPicker`, including the recording) sits beside the code; under both, a big waveform and one row of controls. Each control changes something you can see:
+  - **Reverse:** reverses the samples in the buffer; the waveform flips, and the loop flips with it so it stays on the same sound. A playing clip carries on from the mirrored spot.
+  - **`playbackRate`:** the playhead speeds up or slows down, and the pitch moves with it. Changes apply live, without restarting.
+  - **`detune`:** the same, in cents (−1200 is half speed).
+  - **`loop`, `loopStart`, `loopEnd`:** handles dragged on the waveform, live while it plays. With looping off, the region shows faintly.
+  - **`start(when, offset)`:** click the waveform to play from there. (With looping on, a click past the loop starts at `loopStart`: per the spec, `start()` past `loopEnd` would play on to the end without looping.)
+  ```js
+  buffer.getChannelData(0).reverse()
+  const source = new AudioBufferSourceNode(ctx, { buffer, loop: true })
+  source.playbackRate.value = 1.5
+  source.detune.value = -1200
+  source.loopStart = 0.5
+  source.loopEnd = 1.25
+  source.connect(ctx.destination)
+  source.start(0, offset)
+  ```
+  - The playhead follows the spec's playback algorithm (`audio/playhead.ts`), since the node doesn't report its position.
   - **Say:** "Sound from a file or a mic goes into the same graph. The graph doesn't care where it came from."
+- **6d Pitch without speed, in three slides (`StretchDemo` with `stage`):** answers the question 6c raises: playback rate moves pitch and speed together, so how do apps change one without the other? **Grains:** pitch lives inside a short slice of sound, speed is how fast you move through the slices. Each slide fixes the problem the last one leaves, so the audience hears each problem before its fix. No code; a one-line subtitle on each, then the same layout:
+  - **The signal chain as nodes**, controls inside, like 5d: `AudioBuffer` (clip picker) → `AudioBufferSourceNode` ("a new one for every grain") → `GainNode` (the window) → `destination` (live scope).
+  - **`StretchView`:** two lanes on one time scale, labelled on the left. Bottom: the original. Top: the output (worked out from the same grains, so it redraws as you drag). Every grain's window is a filled bump (a gain from 0 to 1): over what it reads below, where it plays above, with a line joining the two starts. Stretched out, each grain falls a little further behind the last, so the lines lean more and more: the drift. The lane labels give the spacing ("grains 20 ms apart" below, "40 ms apart" above). A dashed line is the windows added up: the output's total gain. The sounding grain is highlighted in both lanes with lines at its start and stop, and a band between the lanes from what it reads to where it plays. **Zoom** (all / 2 s / 0.5 s) zooms both lanes together, centred on the playhead while playing; click to move when stopped. **Drag sideways to stretch** (it sets speed). Where grains overlap in the output (crossfading) is yellow; the original's label says how many grains read each bit of it ("each bit read 4×" at 0.5×: the same audio played again). A **lanes / stacked** switch redraws the grains one per row: a dashed outline over what each reads, a filled window where it plays, and an arrow between them that grows down the rows (the drift); the playheads cross 4 outlines but only 2 filled windows. **Play pauses** where it is; while paused, **‹ grain / grain ›** step one grain at a time, lighting it up in both lanes and playing just that grain.
+  1. **Chop it into grains** (`stage="chop"`): 80 ms grains end to end, no fade (rectangle), speed only. At 0.5× the bottom-lane grains bunch up while the top lane stays evenly spaced: slower, same pitch… plus a buzz, a click at every seam.
+     - **Say:** "Pitch lives inside a grain. Speed is how far apart grains start. But hear that buzz?"
+  2. **Fade the edges** (`stage="fade"`): still end to end, each faded with Hann. The clicks go, but the level pumps 12.5 times a second; the dashed sum drops to zero between grains.
+     - **Say:** "Fixed the clicks, broke the volume."
+  3. **Overlap the grains** (`stage="overlap"`): overlapping by half, each fading in as the last fades out; the dashed sum goes flat. Now the pitch slider, the window picker and the **preserve pitch** toggle (off: one plain looping source, GainNode dimmed) appear. The windows are scaled so overlapping grains never add up past 1: they differ in their edges, not their loudness. Rectangle clicks; sine ripples in level (the dashed line scallops); triangle and Hann are smooth.
+     - **Say:** "Pitch is how fast each grain plays. Speed is how far apart they start. That slight warble is the grains' waves not lining up where they overlap; real apps line them up more cleverly."
+- **6d′ Grains in code:** the `grain()` function (the engine's real code), with step notes: one grain is a source and a gain; pitch is `detune` in cents; `fade` is the window; higher pitch reads more buffer in the same 80 ms; speed is only how far the read position moves.
+  ```js
+  function grain(time, offset) {
+    const source = new AudioBufferSourceNode(ctx, { buffer, detune: cents })
+    const env = new GainNode(ctx, { gain: 0 })
+    env.gain.setValueCurveAtTime(fade, time, GRAIN)
+    source.connect(env).connect(ctx.destination)
+    source.start(time, offset, GRAIN * 2 ** (cents / 1200))
+  }
+
+  // every GRAIN / 2: grain(time, pos), then pos += speed * GRAIN / 2
+  ```
+- **6e Sample pads (`PadsDemo`):** drag across a clip to mark a region, then "→ pad" copies it onto the selected pad of four, in a 2×2 grid beside the clip (a new buffer, so it keeps its sound whatever happens to the clip). Every key (MIDI or on-screen) plays the selected pad chromatically, C4 as recorded, sounding while held; while the selected pad is empty the keys play the marked region straight from the clip. Clicking a pad selects it and plays it at C4. **detune** (a plain source: higher is shorter) or **grains** (6d's engine, played once: every key as long). One labelled playhead per held note, so the lengths show. With the on-screen keyboard open, the code and notes hide so the demo sits above it.
+  ```js
+  const { sampleRate } = buffer
+  const from = Math.round(start * sampleRate)
+  const to = Math.round(end * sampleRate)
+  const pad = new AudioBuffer({ length: to - from, sampleRate })
+  pad.copyToChannel(buffer.getChannelData(0).subarray(from, to), 0)
+
+  function noteOn(note) {
+    const semitones = note - 60 // C4 plays it as recorded
+    playGrains(pad, ctx.destination, { ...settings, semitones })
+  }
+  ```
+  - **Say:** "Chop a word, put it on a key, play it as a melody: same length on every note. This is the sampler."
+
 - **Optional:** the toy 4-track recorder, only if there's time to build it.
-- **Risk:** I control the mic and speakers on stage. Keep a pre-recorded clip in `public/` as a backup.
-- `TODO` choose the trick: reversed, pitched, or both.
 
 ### 7. What's next (about 1.5 min)
 
@@ -325,6 +401,7 @@ Placeholders to refine with Reed, not by an agent alone. `grep -rn "PLACEHOLDER(
 - [ ] Small visuals: raw-MIDI display, octave visual
 - [ ] Audio clips: "what's next" clips, backup mic clip
 - [ ] Closing URL and QR code
+- [ ] Sample pads: pad look and layout, hit level
 
 ---
 

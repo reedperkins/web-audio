@@ -13,6 +13,8 @@
   --accent: #d9480f;
   --signal: #2b8a3e;
   --wire: #9a9a94;
+  /* Where grains overlap, in the grain pictures. */
+  --overlap: #f5c400;
 
   --font-display: system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;

@@ -2,14 +2,15 @@
 import { vNoFocus } from '../audio/useDemo'
 
 // Emits `play`. The parent says whether it's playing; the slot is the label.
-defineProps<{ playing?: boolean }>()
+// With `pauses`, playing shows a pause icon instead of stop.
+defineProps<{ playing?: boolean; pauses?: boolean }>()
 defineEmits<{ play: [] }>()
 </script>
 
 <template>
   <!-- PLACEHOLDER(refine): play button look -->
   <button v-no-focus class="play-button" :class="{ playing }" @click="$emit('play')">
-    <span class="play-button-icon">{{ playing ? '■' : '▶' }}</span>
+    <span class="play-button-icon">{{ playing ? (pauses ? '❚❚' : '■') : '▶' }}</span>
     <slot>Play</slot>
   </button>
 </template>
@@ -30,10 +31,16 @@ defineEmits<{ play: [] }>()
   cursor: pointer;
 }
 
-.play-button:hover,
+.play-button:hover:not(:disabled),
 .play-button.playing {
   background: var(--accent);
   color: var(--bg);
+}
+
+.play-button:disabled {
+  border-color: var(--wire);
+  color: var(--wire);
+  cursor: default;
 }
 
 .play-button-icon {

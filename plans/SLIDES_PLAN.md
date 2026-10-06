@@ -86,7 +86,7 @@ An agent can't hear audio, so every audio task has two checks: an automated one 
 - **Render check:** for audio functions (envelopes, scheduling, `mtof`), import the module in the dev-server page and render into an `OfflineAudioContext`. Then assert on the samples, e.g. "the peak is reached at the attack time" or "no sample jumps by more than X at note-off." No test framework needed.
 - **Slide-leave check:** start a sound, go to the next slide, and confirm the signal check goes silent.
 - **Navigation check:** click every control on the slide, then press → and confirm the deck advances.
-- **Offline check:** serve the build, turn on network emulation "Offline," reload, and confirm it works with no failed requests.
+- **Offline check:** serve the build, open slide 1 and wait a few seconds (Slidev fetches each slide's code after load, and section 6 preloads its clips), then turn on network emulation "Offline" and step through the deck. Chrome's Offline mode blocks localhost too, so don't reload while it's on. Separately, confirm no request leaves `localhost`.
 
 ---
 
@@ -269,14 +269,49 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 - **Fallback if skipped:** the talk opens on the title slide.
 - **Commit:** "Add cold open sequencer"
 
-### [ ] 4.2 Section 6: Mic
+### [ ] 4.2a Section 6a: Samples and the buffer view
 - **Depends on:** 2.5
-- **Docs:** MDN `getUserMedia`, `MediaRecorder`, `decodeAudioData`, `AudioBufferSourceNode.playbackRate`
-- **Goal:** `MicDemo`: record a few seconds, draw the waveform, play back with Reverse and Speed toggles; a pre-recorded backup clip in `public/`.
-- **Placeholder OK:** the backup clip (a labeled generated tone until Reed records one) and the waveform look.
-- **Done when:** the backup clip plays through the same controls; with mic permission denied, the slide explains it and offers the clip.
-- **Listen for:** recording plays back clearly; reverse and speed both work.
+- **Docs:** MDN `decodeAudioData`, `AudioBuffer`, `AudioBufferSourceNode`
+- **Goal:** the vendored clips in `public/samples/` (with `CREDITS.md`); `audio/samples.ts` (the clip list, loaded and decoded once, shared by section 6); `BufferView` (a waveform drawn from `getChannelData`, with a playhead); `BufferDemo` on 6a, which plays the slide's code and shows the buffer's channels, sample rate and length. Placeholder slides for 6b–6d.
+- **Placeholder OK:** the waveform look; `hello.mp3` is a `say` voice until Reed records one.
+- **Done when:** screenshot; signal check after Play; the playhead reaches the end as the sound ends; slide-leave check; the offline check passes with every clip loading.
+- **Listen for:** the Apollo clip plays all the way through, clean.
+- **Commit:** "Add vendored samples and buffer demo"
+
+### [ ] 4.2b Section 6b: Mic
+- **Depends on:** 4.2a
+- **Docs:** MDN `getUserMedia`, `MediaStreamAudioSourceNode`, `MediaRecorder`, `decodeAudioData`
+- **Goal:** `MicDemo`: a live, scrolling mic waveform; Record captures a few seconds into an `AudioBuffer` that joins the clip list and becomes `picked`, so 6c opens on it. The recording must be mono: `reverse()` flips channel 0 only, as the slide code does. The mic stops on leave.
+- **Placeholder OK:** the scrolling waveform look.
+- **Done when:** with mic permission denied, the slide says so and points at the backup clip; with a fake mic (Chrome's `--use-fake-device-for-media-stream`), the recording appears in the list and on 6c.
+- **Listen for:** no feedback howl with speakers on (live monitoring is off by default); the recording plays back clearly.
 - **Commit:** "Add mic demo"
+
+### [ ] 4.2c Section 6c: Play it differently
+- **Depends on:** 4.2a
+- **Docs:** MDN `AudioBufferSourceNode` (`playbackRate`, `detune`, `loop`, `loopStart`, `loopEnd`, `start()`)
+- **Goal:** `SamplerDemo`: clip picker, a big `BufferView` with loop handles, and Reverse, rate, detune and loop controls. The playhead follows the real position at any rate, reversed or looping.
+- **Placeholder OK:** control look.
+- **Done when:** screenshot; signal check; the playhead stays in step with the sound at rates 0.5 and 2 and with a loop; changing the rate mid-play doesn't restart the sound.
+- **Listen for:** chipmunk and slow-mo both work; loops don't click at the seam (or note that they do).
+- **Commit:** "Add sampler demo"
+
+### [ ] 4.2d Section 6d: Pitch without speed
+- **Depends on:** 4.2c
+- **Docs:** MDN `AudioBufferSourceNode` (`detune`, `start(when, offset, duration)`), `AudioParam.setValueCurveAtTime`; the sequencer's lookahead scheduler (`audio/sequencer.ts`)
+- **Goal:** `audio/grains.ts`, a granular player (80 ms grains at 50% overlap with a choice of window, each scaled so overlaps never sum past 1; scheduled ahead on the audio clock; pitch via each grain's `detune`, speed via how far the read position moves per grain). `StretchDemo`: the signal chain as nodes with the controls inside (clip picker, speed and pitch, `WindowShapes` window picker, scope), a preserve-pitch toggle (off: a plain looping buffer source), and `StretchView` (original and output lanes on one time scale, windows and their dashed sum, a drift line from each grain's read to its play, yellow output overlaps, a stacked one-row-per-grain layout, the sounding grain, zoom, pause and step by grain, drag to stretch). Three slides build it up with `StretchDemo`'s `stage`: chop (no fade, no overlap, speed only), fade (Hann, no overlap, speed only), overlap (everything; the engine's `overlap` setting). A fourth, "Grains in code", with the `grain()` code and step notes.
+- **Placeholder OK:** grain size, zoom levels, the look.
+- **Done when:** screenshot of both slides; signal check; render check: with preserve pitch on, speed 0.5 keeps a 440 Hz tone at 440 Hz and takes twice as long through the buffer, and +12 semitones at speed 1 doubles the pitch at the same pace; every window plays, none louder than the source, only rectangle jumps; chop buzzes, fade pumps (dashed sum dips to zero), overlap holds a steady level; dragging the view changes speed and redraws at once; slide-leave check.
+- **Listen for:** speech stays intelligible at 0.5× and 1.5× with the pitch held; ±12 semitones at normal speed; rectangle clicks, sine ripples, Hann and triangle are smooth; the warble is there but mild.
+- **Commit:** "Add pitch-without-speed demo"
+
+### [x] 4.2e Section 6e: Sample pads
+- **Depends on:** 4.2d, 3.7
+- **Goal:** `PadsDemo`: dragging on the source waveform marks a region; "→ pad" copies it into a new buffer (`audio/pads.ts`) on the selected one of four pads (2×2 grid). Every key plays the selected pad chromatically (C4 as recorded, gated), pitched by `detune` or by the grain engine played once (`once` setting), with a labelled playhead per note; an empty pad falls back to the marked region. Plays from MIDI, the on-screen keys and pad clicks. Replaces the old "sampler keys" task.
+- **Placeholder OK:** pad look, which keys map to which pads.
+- **Done when:** screenshot; a copied pad holds exactly the selected samples; signal check from a pad click and an on-screen key; leaving the slide hands the keys back to the synth.
+- **Listen for:** pads trigger without clicks at the start or end of the region.
+- **Commit:** "Add sample pads"
 
 ### [ ] 4.3 Section 7: What's next clips
 - **Depends on:** 2.5
@@ -310,6 +345,7 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 - [ ] **5.5 4-track recorder** on the mic slide.
 - [ ] **5.6 Self-guided mode:** captions standing in for the spoken notes; a mic-permission explanation.
 - [ ] **5.7 Hosting:** deploy the built deck (`TODO` Reed picks where; check `--base` if it's under a sub-path).
+- [ ] **5.8 User uploads:** drop your own audio file on a section 6 waveform (`file.arrayBuffer()` → `decodeAudioData`).
 
 ---
 
@@ -321,3 +357,4 @@ Add a dated line when a task is approved: the task number, and anything worth re
 - 2026-10-05: 1.1, 1.3, 1.4, 2.2, 2.3 approved (built before the plan changed). Sections already have slides with text and code; Phase 3 adds their demos.
 - 2026-10-05: 1.2, 2.1, 2.4, 2.5, 2.6, 3.1, 3.2, 3.3 approved. `useDemo()` returns `out` as a `shallowRef` (connect to `out.value`), since it's swapped for a fresh node on each leave. The code layout's notes column spans the full height and the demo sits under the code only, so tall notes can't push the demo off the slide. 2b has a note-length slider (starts clean at 0.1 s, overlaps up to the slide's 0.75 s) to lead into 3a. Slide 8 code splits out `const now`. Still overflowing, for their own tasks: slides 11 and 19 (long code lines), 15 (bottom). `grep "demo:"` from 2.6 now matches the `::demo::` slot.
 - 2026-10-05: 4.5 approved (built with 3.6, ahead of the remaining Must tasks; the playhead dot shows the real level, so a release mid-attack drops from wherever the volume was). 3.4 and 3.6 partly done, see their status lines. The presets table slide is gone: the presets are cards under the ADSR editor on 4b, so later slides moved up one. Enter is the ADSR trigger key: Slidev only binds it in the overview, and it's not a letter key. Slide 11 fixed (wrapped the long lines, code at 1rem on that slide); still overflowing: slides 14 (bottom) and 18 (long code lines). Editor time axis uses a square-root scale (shared with the preset bars) so ms-short times stay grabbable.
+- 2026-10-06: 4.2e approved. Four pads in a 2×2 grid; every key plays the selected pad chromatically (C4 as recorded, gated), by `detune` or by grains played once (the grain engine's new `once` setting); an empty pad falls back to the marked region. Pads mode (one pad per key) was tried and dropped. `BufferView` gained `selectable` (drag to mark a region) and `ClipPicker` an `inline` variant. With the on-screen keyboard open the slide hides its code and notes so the demo sits above the drawer. Committed together with 4.2a–4.2d, which pads build on; their boxes stay open until reviewed. Gotcha: every open tab of the deck hears a real MIDI keyboard, so two open windows double-trigger.

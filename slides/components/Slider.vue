@@ -3,11 +3,16 @@ import { vNoFocus } from '../audio/useDemo'
 
 // A labeled range input: <Slider v-model="level" label="gain" />
 const value = defineModel<number>({ required: true })
-withDefaults(defineProps<{ label?: string; min?: number; max?: number; step?: number }>(), {
-  min: 0,
-  max: 1,
-  step: 0.01,
-})
+withDefaults(
+  defineProps<{ label?: string; min?: number; max?: number; step?: number; digits?: number }>(),
+  {
+    min: 0,
+    max: 1,
+    step: 0.01,
+    // Decimal places shown in the readout.
+    digits: 2,
+  },
+)
 </script>
 
 <template>
@@ -22,7 +27,7 @@ withDefaults(defineProps<{ label?: string; min?: number; max?: number; step?: nu
       :max="max"
       :step="step"
     >
-    <output class="slider-value">{{ value.toFixed(2) }}</output>
+    <output class="slider-value">{{ value.toFixed(digits) }}</output>
   </label>
 </template>
 
