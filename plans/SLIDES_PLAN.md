@@ -215,6 +215,7 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 - **Done when:** render check of `mtof` (69 → 440, 81 → 880); playing and releasing 50 notes leaves no voices behind; leaving a slide with notes held silences them.
 - **Listen for:** chords sound clean; held notes don't cut off when others are released.
 - **Commit:** "Add shared synth"
+- **Status:** `audio/synth.ts` built (slide's `Voice`, `keyDown`/`keyUp`, `releaseAll`, subscribed with `onNote`). Silent until a slide calls `playInto(out)`; only 5c does so far. Left: playing on every slide from section 4 on, `wave`, and the 50-note check.
 
 ### [ ] 3.6 ADSR editor and presets
 - **Depends on:** 3.5
@@ -242,7 +243,7 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 - **Done when:** screenshots after simulated notes show each picture updating; the scope shows four clearly different shapes in 5d.
 - **Listen for:** the Zelda preset sounds recognizably "8-bit."
 - **Commit:** "Add keyboard demos"
-- **Status:** 5a `MidiLog` built (status line plus a table of the last message: bits, decimal and meaning per byte). 5b has `PitchGraph` (the `mtof` curve, notes 33–93, dots on each A so the labels double exactly (110 … 1760), live dot for held or hovered notes, Linear / Log switch that animates between the two) beside `OctaveKeys`, which is now the shared `Keyboard` (A3–A4, held notes light up, playable). `audio/mtof.ts` exists.
+- **Status:** 5a `MidiLog` built (status line plus a table of the last message: bits, decimal and meaning per byte). 5b has `PitchGraph` (the `mtof` curve, notes 33–93, dots on each A so the labels double exactly (110 … 1760), live dot for held or hovered notes, Linear / Log switch that animates between the two) beside `OctaveKeys`, which is now the shared `Keyboard` (A3–A4, held notes light up, playable). `audio/mtof.ts` exists. 5c `VoicesDemo` built: chord buttons (a reharmonized Silent Night from `progression` in `audio/presets.ts`; a click holds 0.7 s, common tones held between chords), a Cycle button (one chord a second, legato, cut short when stopped) and a keyboard under the code, `VoiceList` (one box per voice, fading over the release) in the aside.
 
 ### [ ] 3.9 Section 8: Hub and close
 - **Depends on:** 3.7

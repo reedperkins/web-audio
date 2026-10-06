@@ -104,6 +104,11 @@ function keyUp(note) {
 <StepNote :at="1">Key down: a new voice at that key's pitch.</StepNote>
 <StepNote :at="2">Key up: release it and forget it.</StepNote>
 <StepNote :at="3">Press three keys, get three voices: a chord.</StepNote>
+<VoiceList />
+
+::demo::
+
+<VoicesDemo />
 
 ---
 layout: code

@@ -70,13 +70,14 @@ export function receive(bytes: ArrayLike<number>, source: string) {
   }
 }
 
-// The on-screen keyboard. Pressing a key is a user gesture, so it unlocks audio.
-export function pressKey(note: number, velocity: number) {
+// The on-screen keyboard, or another on-slide control that names itself as
+// `source`. Pressing is a user gesture, so it unlocks audio.
+export function pressKey(note: number, velocity: number, source = ON_SCREEN) {
   unlock()
-  receive([NOTE_ON, note, velocity], ON_SCREEN)
+  receive([NOTE_ON, note, velocity], source)
 }
-export function releaseKey(note: number) {
-  receive([NOTE_OFF, note, 64], ON_SCREEN)
+export function releaseKey(note: number, source = ON_SCREEN) {
+  receive([NOTE_OFF, note, 64], source)
 }
 export function connectOnScreen(on: boolean) {
   midi.onScreen = on
