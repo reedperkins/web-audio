@@ -4,8 +4,8 @@ import { unlock } from '../audio/audio'
 import type { PlaybackParams } from '../audio/playhead'
 import { Playhead } from '../audio/playhead'
 import { load, picked as clip, reverse } from '../audio/samples'
-import { useDemo, vNoFocus } from '../audio/useDemo'
-import type { LoopRegion } from './BufferView.vue'
+import { useClipRegion } from '../audio/useClipRegion'
+import { useDemo } from '../audio/useDemo'
 
 // Plays the "Play it differently" slide's code on any clip. Rate, detune and
 // the loop change the playing source live; reversing and seeking start a new
@@ -15,15 +15,8 @@ import type { LoopRegion } from './BufferView.vue'
 const buffer = computed(() => clip.value.buffer)
 
 const params = reactive({ playbackRate: 1, detune: 0, loop: false })
-// Each clip keeps its own loop; a new one starts on the second quarter.
-const loops = reactive(new Map<string, LoopRegion>())
-const region = computed<LoopRegion>({
-  get() {
-    const duration = buffer.value?.duration ?? 1
-    return loops.get(clip.value.id) ?? { start: duration / 4, end: duration / 2 }
-  },
-  set: (value) => loops.set(clip.value.id, value),
-})
+// Each clip keeps its own loop.
+const region = useClipRegion(clip)
 
 let source: AudioBufferSourceNode | null = null
 let playhead: Playhead | null = null
@@ -159,7 +152,7 @@ function seek(seconds: number) {
     <BufferView
       v-model:loop="region"
       class="sampler-wave"
-      :class="{ 'loop-off': !params.loop }"
+      :loop-active="params.loop"
       :buffer="buffer"
       :version="clip.version"
       :position="position"
@@ -169,12 +162,8 @@ function seek(seconds: number) {
 
     <div class="sampler-controls">
       <PlayButton :playing="playing" @play="toggle" />
-      <button v-no-focus class="sampler-toggle" :class="{ on: clip.reversed }" @click="flip">
-        reverse()
-      </button>
-      <button v-no-focus class="sampler-toggle" :class="{ on: params.loop }" @click="params.loop = !params.loop">
-        loop
-      </button>
+      <ToggleChip class="sampler-toggle" :on="clip.reversed" @click="flip">reverse()</ToggleChip>
+      <ToggleChip class="sampler-toggle" :on="params.loop" @click="params.loop = !params.loop">loop</ToggleChip>
       <Slider v-model="params.playbackRate" label="playbackRate" :min="0.25" :max="3" :step="0.05" />
       <Slider v-model="params.detune" label="detune" :min="-1200" :max="1200" :step="100" :digits="0" />
     </div>
@@ -193,46 +182,20 @@ function seek(seconds: number) {
   display: flex;
   align-items: center;
   gap: 1rem;
+  /* Room for "-1200" without the row reflowing as values change. */
+  --slider-width: 7em;
+  --slider-value-width: 5ch;
 }
 
 .sampler-controls > * {
   flex-shrink: 0;
 }
 
-/* Room for "-1200" without the row reflowing as values change. */
-.sampler-controls :deep(.slider-value) {
-  min-width: 5ch;
-}
-
-.sampler-controls :deep(input) {
-  width: 7em;
-}
-
 .sampler-wave {
   height: 6rem;
 }
 
-/* With looping off the region is only a preview of where the loop would go. */
-.sampler-wave.loop-off :deep(.buffer-loop) {
-  opacity: 0.35;
-}
-
 .sampler-toggle {
-  padding: 0.3em 0.8em;
-  border: 2px solid var(--wire);
-  border-radius: 999px;
-  background: none;
-  color: var(--muted);
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.sampler-toggle.on {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--bg);
 }
 </style>

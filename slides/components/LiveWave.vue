@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { fitCanvas } from '../lib/canvas'
 
 // A live signal scrolling right to left:
 //   <LiveWave :analyser="analyser" :active="on" :recording="recording" />
@@ -39,27 +40,21 @@ function sample(now: number) {
 }
 
 function draw(now: number) {
-  const el = canvas.value
-  if (!el) return
-  const scale = devicePixelRatio * 2
-  const w = Math.round(el.clientWidth * scale)
-  const h = Math.round(el.clientHeight * scale)
-  if (!w || !h) return
-  if (el.width !== w || el.height !== h) Object.assign(el, { width: w, height: h })
-  const g = el.getContext('2d')!
-  const style = getComputedStyle(el)
-  g.clearRect(0, 0, w, h)
+  const fit = fitCanvas(canvas.value)
+  if (!fit) return
+  const { g, w, h, scale, color } = fit
 
-  g.fillStyle = style.getPropertyValue('--wire')
+  g.fillStyle = color('--wire')
   g.fillRect(0, h / 2 - scale / 2, w, scale)
 
-  const colors = { false: style.getPropertyValue('--signal'), true: style.getPropertyValue('--accent') }
+  const live = color('--signal')
+  const recorded = color('--accent')
   const x = (at: number) => w - ((now - at) / (WINDOW * 1000)) * w
   for (let i = 0; i < columns.length; i++) {
     const c = columns[i]
     const left = i ? x(columns[i - 1].at) : x(c.at) - scale
     const height = Math.max(scale, c.peak * h * 0.95)
-    g.fillStyle = colors[`${c.recording}`]
+    g.fillStyle = c.recording ? recorded : live
     g.fillRect(left, (h - height) / 2, Math.max(scale, x(c.at) - left), height)
   }
 }

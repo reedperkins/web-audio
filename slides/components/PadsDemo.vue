@@ -5,8 +5,9 @@ import { midi, noteName, onNote, pressKey, releaseKey } from '../audio/input'
 import type { Hit, PitchMode } from '../audio/pads'
 import { copyRegion, CUT, hit, RELEASE } from '../audio/pads'
 import { load, picked as clip } from '../audio/samples'
-import { useDemo, vNoFocus } from '../audio/useDemo'
-import type { LoopRegion } from './BufferView.vue'
+import { useClipRegion } from '../audio/useClipRegion'
+import { useDemo } from '../audio/useDemo'
+import { duration } from '../lib/format'
 
 // The "Sample pads" slide. Drag across the clip to mark a region, then
 // "→ pad" copies it (the slide's `copyRegion`) onto the selected pad. Every
@@ -31,17 +32,14 @@ interface Pad {
 const pads = reactive<Pad[]>(Array.from({ length: PADS }, () => ({ buffer: null, from: '' })))
 const selected = ref(0)
 const pitch = ref<PitchMode>('grains')
+const PITCH_MODES: { value: PitchMode; label: string }[] = [
+  { value: 'rate', label: 'detune' },
+  { value: 'grains', label: 'grains' },
+]
 
 const buffer = computed(() => clip.value.buffer)
-// Each clip keeps its own selection; a new one starts on the second quarter.
-const regions = reactive(new Map<string, LoopRegion>())
-const region = computed<LoopRegion>({
-  get() {
-    const duration = buffer.value?.duration ?? 1
-    return regions.get(clip.value.id) ?? { start: duration / 4, end: duration / 2 }
-  },
-  set: (value) => regions.set(clip.value.id, value),
-})
+// Each clip keeps its own selection.
+const region = useClipRegion(clip)
 
 // What's sounding, by key (or 'preview' for the ▶ button), and where each
 // one is, for its playhead. `pad` is -1 for the marked region, which plays
@@ -150,8 +148,7 @@ async function save() {
   pads[i].from = clip.value.name
 }
 
-const seconds = (s: number) => (s < 1 ? `${Math.round(s * 1000)} ms` : `${s.toFixed(2)} s`)
-const selectionLength = computed(() => seconds(region.value.end - region.value.start))
+const selectionLength = computed(() => duration(region.value.end - region.value.start))
 
 const headsOn = (i: number) => heads.value.filter((h) => h.pad === i)
 const clipPercent = (at: number) => `${(at / (buffer.value?.duration || 1)) * 100}%`
@@ -174,15 +171,11 @@ const percent = (at: number, i: number) => `${(at / (pads[i].buffer?.duration ||
         </div>
       </BufferView>
       <div class="pads-controls">
-        <button v-no-focus class="pads-button" @click="preview">▶ {{ selectionLength }}</button>
-        <button v-no-focus class="pads-button primary" @click="save">→ pad {{ selected + 1 }}</button>
-        <div class="pads-switch">
-          <span>pitch</span>
-          <button v-no-focus :class="{ on: pitch === 'rate' }" @click="pitch = 'rate'">detune</button>
-          <button v-no-focus :class="{ on: pitch === 'grains' }" @click="pitch = 'grains'">grains</button>
-        </div>
+        <ToggleChip class="pads-button" @click="preview">▶ {{ selectionLength }}</ToggleChip>
+        <ToggleChip on class="pads-button" @click="save">→ pad {{ selected + 1 }}</ToggleChip>
+        <Segmented v-model="pitch" class="pads-switch" label="pitch" :options="PITCH_MODES" />
       </div>
-      <ClipPicker inline />
+      <ClipPicker variant="inline" />
     </div>
 
     <div class="pads-grid">
@@ -205,7 +198,7 @@ const percent = (at: number, i: number) => `${(at / (pads[i].buffer?.duration ||
         <div v-else class="pad-wave pad-blank">empty</div>
         <div class="pad-label">
           <span class="pad-key">{{ i + 1 }}<template v-if="i === selected"> · on keys</template></span>
-          <span v-if="pad.buffer">{{ seconds(pad.buffer.duration) }}</span>
+          <span v-if="pad.buffer">{{ duration(pad.buffer.duration) }}</span>
         </div>
       </div>
     </div>
@@ -244,39 +237,11 @@ const percent = (at: number, i: number) => `${(at / (pads[i].buffer?.duration ||
 }
 
 .pads-switch {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
   margin-left: auto;
-  color: var(--muted);
+}
+
+.pads-button {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
-}
-
-.pads-button,
-.pads-switch button {
-  padding: 0.3em 0.8em;
-  border: 2px solid var(--wire);
-  border-radius: 999px;
-  background: none;
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.pads-switch button {
-  padding: 0.2em 0.65em;
-  font-size: 0.65rem;
-}
-
-.pads-button.primary,
-.pads-switch button.on {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--bg);
 }
 
 .pads-grid {

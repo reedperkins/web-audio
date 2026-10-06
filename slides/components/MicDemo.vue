@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { unlock } from '../audio/audio'
 import { addRecording, picked, sample, samples } from '../audio/samples'
 import { useBufferPlayer } from '../audio/useBufferPlayer'
-import { useDemo, vNoFocus } from '../audio/useDemo'
+import { useDemo } from '../audio/useDemo'
 
 // Plays the "The mic" slide's code. The live stream only goes to an analyser
 // for the scrolling picture, never to the speakers, so there's no feedback.
@@ -148,21 +148,13 @@ const micLabel = computed(() =>
 <template>
   <div class="mic-demo">
     <div class="mic-buttons">
-      <button v-no-focus class="mic-button" :class="{ on: status === 'live' }" @click="toggleMic">
-        {{ micLabel }}
-      </button>
-      <button
-        v-no-focus
-        class="mic-button record"
-        :class="{ on: recording }"
-        :disabled="status !== 'live'"
-        @click="toggleRecord"
-      >
+      <ToggleChip action class="mic-button" :on="status === 'live'" @click="toggleMic">{{ micLabel }}</ToggleChip>
+      <ToggleChip action class="mic-button" :on="recording" :disabled="status !== 'live'" @click="toggleRecord">
         {{ recording ? '■ Stop' : '● Record' }}
-      </button>
+      </ToggleChip>
     </div>
     <div class="mic-strip">
-      <LiveWave :analyser="analyser" :active="status === 'live'" :recording="recording" />
+      <LiveWave class="mic-picture" :analyser="analyser" :active="status === 'live'" :recording="recording" />
       <span class="mic-tag">MediaStream · live</span>
       <span v-if="messages[status]" class="mic-message">{{ messages[status] }}</span>
     </div>
@@ -171,7 +163,12 @@ const micLabel = computed(() =>
       <PlayButton :playing="player.playing.value" :disabled="!shown?.buffer" @play="togglePlay" />
     </div>
     <div class="mic-strip">
-      <BufferView :buffer="shown?.buffer" :version="shown?.version" :position="player.position.value" />
+      <BufferView
+        class="mic-picture"
+        :buffer="shown?.buffer"
+        :version="shown?.version"
+        :position="player.position.value"
+      />
       <span class="mic-tag">AudioBuffer · {{ shown ? shown.name.toLowerCase() : 'recorded' }}</span>
       <span v-if="note" class="mic-message">{{ note }}</span>
       <span v-else-if="!shown" class="mic-message">Record to turn the stream into a buffer.</span>
@@ -195,23 +192,31 @@ const micLabel = computed(() =>
   gap: 0.4rem;
 }
 
+/* The picture fills the strip; the tag and message sit on top of it, all in
+   one grid cell, sized by the strip (not by the canvas inside). */
 .mic-strip {
-  position: relative;
+  display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   height: 4.25rem;
   border-radius: 0.4rem;
   background: var(--surface);
 }
 
-.mic-strip :deep(.buffer-view) {
+.mic-strip > * {
+  grid-area: 1 / 1;
+  z-index: 3;
+}
+
+.mic-strip > .mic-picture {
+  z-index: auto;
   height: 100%;
+  min-width: 0;
   background: none;
 }
 
 .mic-tag {
-  position: absolute;
-  top: 0.3rem;
-  left: 0.5rem;
-  z-index: 3;
+  place-self: start;
+  margin: 0.3rem 0.5rem;
   padding: 0 0.3em;
   border-radius: 0.2rem;
   background: var(--surface);
@@ -221,11 +226,7 @@ const micLabel = computed(() =>
 }
 
 .mic-message {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 3;
-  transform: translate(-50%, -50%);
+  place-self: center;
   padding: 0.2em 0.7em;
   border-radius: 0.3rem;
   background: var(--surface);
@@ -236,27 +237,6 @@ const micLabel = computed(() =>
 }
 
 .mic-button {
-  padding: 0.3em 0.8em;
-  border: 2px solid var(--accent);
-  border-radius: 999px;
-  background: none;
-  color: var(--accent);
-  font-family: var(--font-body);
   font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.mic-button:hover:not(:disabled),
-.mic-button.on {
-  background: var(--accent);
-  color: var(--bg);
-}
-
-.mic-button:disabled {
-  border-color: var(--wire);
-  color: var(--wire);
-  cursor: default;
 }
 </style>

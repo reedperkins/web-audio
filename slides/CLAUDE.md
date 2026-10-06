@@ -15,7 +15,10 @@ to check a slide visually. Check https://sli.dev for features and config.
 - `audio/`: the engine (`audio.ts`, `useDemo.ts`) and plain audio modules
   (envelope, synth, `mtof`, input, sequencer, presets). No Vue components.
 - `components/`: building blocks with no audio inside (`PlayButton`, `Scope`,
-  `AdsrEditor`, …) and one demo component per slide (`BeepDemo`, `ClockDemo`, …)
+  `AdsrEditor`, …) and one demo component per slide (`BeepDemo`, `ClockDemo`, …).
+  Buttons are `ToggleChip` (or `PlayButton`, `Segmented`, `ShapePicker`), not
+  hand-styled `<button>`s.
+- `lib/`: plain drawing and formatting helpers (`fitCanvas`, `duration`)
 - `layouts/`, `public/`, `setup/`, `theme/`: Slidev conventions
 
 ## Rules
@@ -34,6 +37,9 @@ to check a slide visually. Check https://sli.dev for features and config.
 - Never let a link or control keep focus (use `noFocus`). Slidev turns off its
   shortcuts while an `<a>`, `<button>` or `<input>` has focus.
 - Step-driven behavior depends on the current step number, never on each click.
+- Size and style a building block through its props, its root element (a
+  class on the component) or the CSS variables it documents
+  (`--slider-width`, `--node-padding`, …). No `:deep()` into its insides.
 - Colors and fonts come only from the tokens in `theme/`. Canvas code reads
   them with `getComputedStyle`; SVG uses `currentColor`. Code highlighting is
   set in the Shiki config.

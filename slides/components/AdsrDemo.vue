@@ -5,7 +5,7 @@ import type { Envelope, EnvelopePosition } from '../audio/envelope'
 import { env, envelopeAt, noteOff, noteOn } from '../audio/envelope'
 import type { EnvelopePreset } from '../audio/presets'
 import { envelopePresets } from '../audio/presets'
-import { useDemo, vNoFocus } from '../audio/useDemo'
+import { useDemo } from '../audio/useDemo'
 
 // The "Shape over time" editor. Hold the button (or Enter) to play a note
 // through the envelope; let go to release it. Letting go of a handle plays a
@@ -121,21 +121,21 @@ function stopAll() {
 
 <template>
   <div class="adsr-demo">
-    <AdsrEditor v-model="envModel" :playhead="playhead" @commit="start(PREVIEW_HOLD)" />
+    <AdsrEditor v-model="envModel" class="editor" :playhead="playhead" @commit="start(PREVIEW_HOLD)" />
     <div class="controls">
       <AdsrPresets :presets="envelopePresets" :current="env" @pick="pick" />
       <!-- PLACEHOLDER(refine): trigger button look -->
-      <button
-        v-no-focus
+      <ToggleChip
+        action
         class="trigger"
-        :class="{ holding }"
+        :on="holding"
         @pointerdown.prevent="press"
         @pointerup="lift"
         @pointerleave="lift"
         @pointercancel="lift"
       >
         Hold to play <kbd>⏎ Enter</kbd>
-      </button>
+      </ToggleChip>
     </div>
   </div>
 </template>
@@ -149,7 +149,7 @@ function stopAll() {
 }
 
 /* Leaves room for the presets row under it. */
-.adsr-demo :deep(.adsr-editor) {
+.editor {
   width: 82%;
 }
 
@@ -161,26 +161,11 @@ function stopAll() {
 
 .trigger {
   flex: none;
-  display: inline-flex;
-  align-items: center;
   gap: 0.6em;
   padding: 0.35em 0.9em;
-  border: 2px solid var(--accent);
-  border-radius: 999px;
-  background: none;
-  color: var(--accent);
-  font-family: var(--font-body);
   font-size: var(--size-small);
-  font-weight: 600;
-  cursor: pointer;
   user-select: none;
   touch-action: none;
-}
-
-.trigger:hover,
-.trigger.holding {
-  background: var(--accent);
-  color: var(--bg);
 }
 
 kbd {

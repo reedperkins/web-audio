@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { fitCanvas } from '../lib/canvas'
 
 // A live oscilloscope: <Scope :analyser="analyser" :active="playing" />
 // Draws only while `active`. Each frame starts at a rising zero crossing and
@@ -30,17 +31,11 @@ function risingCrossings(from: number, threshold: number) {
 }
 
 function draw(live: boolean) {
-  const el = canvas.value
-  if (!el) return
-  const scale = devicePixelRatio * 2
-  const w = el.clientWidth * scale
-  const h = el.clientHeight * scale
-  if (el.width !== w || el.height !== h) Object.assign(el, { width: w, height: h })
-  const g = el.getContext('2d')!
-  const style = getComputedStyle(el)
-  g.clearRect(0, 0, w, h)
+  const fit = fitCanvas(canvas.value)
+  if (!fit) return
+  const { g, w, h, scale, color } = fit
 
-  g.strokeStyle = style.getPropertyValue('--wire')
+  g.strokeStyle = color('--wire')
   g.lineWidth = scale
   g.setLineDash([4 * scale, 4 * scale])
   g.beginPath()
@@ -61,7 +56,7 @@ function draw(live: boolean) {
   const period = second === undefined ? data.length / 4 : second - start
   const length = Math.min(data.length - start, Math.max(64, period * PERIODS))
 
-  g.strokeStyle = style.getPropertyValue('--signal')
+  g.strokeStyle = color('--signal')
   g.lineWidth = 2.5 * scale
   g.lineJoin = 'round'
   g.beginPath()
@@ -91,8 +86,14 @@ watch(
   },
 )
 
-onMounted(() => draw(false))
-onUnmounted(() => cancelAnimationFrame(frame))
+// Slides that aren't showing have zero size; draw the idle line once they're
+// laid out. While active, the loop redraws every frame anyway.
+const resize = new ResizeObserver(() => props.active || draw(false))
+onMounted(() => resize.observe(canvas.value!))
+onUnmounted(() => {
+  cancelAnimationFrame(frame)
+  resize.disconnect()
+})
 </script>
 
 <template>

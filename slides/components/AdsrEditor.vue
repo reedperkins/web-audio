@@ -2,13 +2,16 @@
 import { computed, ref } from 'vue'
 import type { Envelope, EnvelopePosition, TimeSegment } from '../audio/envelope'
 import { fractionToTime, timeToFraction } from '../audio/envelope'
+import { duration } from '../lib/format'
 
 // A drag-and-drop ADSR curve: <AdsrEditor v-model="env" @commit="play" />
 // Four handles: attack (time), decay (time and sustain level), sustain
 // (level) and release (time). Emits `commit` when a handle is let go.
-// `playhead` draws a dot where a playing note is in its envelope.
+// `playhead` draws a dot where a playing note is in its envelope. `compact`
+// is for small sizes: only the A D S R letters, drawn bigger, no values or
+// key labels.
 const model = defineModel<Envelope>({ required: true })
-const props = defineProps<{ playhead?: EnvelopePosition | null }>()
+const props = defineProps<{ playhead?: EnvelopePosition | null; compact?: boolean }>()
 const emit = defineEmits<{ commit: [] }>()
 
 // PLACEHOLDER(refine): ADSR editor geometry and look
@@ -49,15 +52,14 @@ const handles = computed(() => {
   ]
 })
 
-const ms = (t: number) => (t < 1 ? `${Math.round(t * 1000)} ms` : `${t.toFixed(2)} s`)
 const labels = computed(() => {
   const { xA, xD, xS, xR } = pts.value
   const { attack, decay, sustain, release } = model.value
   return [
-    { key: 'attack', x: (X0 + xA) / 2, letter: 'A', value: ms(attack) },
-    { key: 'decay', x: (xA + xD) / 2, letter: 'D', value: ms(decay) },
+    { key: 'attack', x: (X0 + xA) / 2, letter: 'A', value: duration(attack) },
+    { key: 'decay', x: (xA + xD) / 2, letter: 'D', value: duration(decay) },
     { key: 'sustain', x: (xD + xS) / 2, letter: 'S', value: sustain.toFixed(2) },
-    { key: 'release', x: (xS + xR) / 2, letter: 'R', value: ms(release) },
+    { key: 'release', x: (xS + xR) / 2, letter: 'R', value: duration(release) },
   ]
 })
 
@@ -114,7 +116,7 @@ function drop() {
   <svg
     ref="svg"
     class="adsr-editor"
-    :class="{ dragging }"
+    :class="{ dragging, compact }"
     viewBox="0 0 1000 310"
     role="img"
     aria-label="Envelope editor: attack, decay, sustain, release"
@@ -125,15 +127,17 @@ function drop() {
     <line :x1="X0" :y1="BASE" x2="990" :y2="BASE" class="axis" />
     <line :x1="X0" :y1="BASE" :x2="X0" y2="10" class="axis" />
     <line :x1="pts.xS" y1="20" :x2="pts.xS" :y2="BASE" class="marker" />
-    <text :x="X0 + 6" y="24" class="note">key down</text>
-    <text :x="pts.xS + 6" y="24" class="note">key up</text>
+    <template v-if="!compact">
+      <text :x="X0 + 6" y="24" class="note">key down</text>
+      <text :x="pts.xS + 6" y="24" class="note">key up</text>
+    </template>
 
     <path :d="`${path} Z`" class="area" />
     <path :d="path" class="trace" />
 
     <g v-for="label in labels" :key="label.key" class="label" :class="{ active: playheadPoint?.phase === label.key }">
       <text :x="label.x" :y="BASE + 32" class="letter">{{ label.letter }}</text>
-      <text :x="label.x" :y="BASE + 54" class="value">{{ label.value }}</text>
+      <text v-if="!compact" :x="label.x" :y="BASE + 54" class="value">{{ label.value }}</text>
     </g>
 
     <g v-if="playheadPoint" class="playhead">
@@ -207,6 +211,10 @@ function drop() {
   font-family: var(--font-display);
   font-size: 26px;
   font-weight: 700;
+}
+
+.compact .letter {
+  font-size: 38px;
 }
 
 .value {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, toRaw, watch } from 'vue'
 import { ctx, unlock } from '../audio/audio'
 import type { Chaos, ChaosStats, KeysMode, PadMode } from '../audio/chaos'
 import {
@@ -19,7 +19,7 @@ import { onControl, onNote, pressKey, releaseKey } from '../audio/input'
 import { addRecording, load, sample, samples } from '../audio/samples'
 import type { Tape } from '../audio/tape'
 import { createTape, newTracks } from '../audio/tape'
-import { useDemo, vNoFocus } from '../audio/useDemo'
+import { useDemo } from '../audio/useDemo'
 
 // The "Chaos" slide. Keys play the swarm, pads mangle a recording, knobs K1–K8
 // and the joystick bend it all (see audio/chaos.ts for the mapping). An
@@ -68,7 +68,9 @@ const { out } = useDemo({
   enter() {
     active.value = true
     bus.connect(out.value)
-    chaos = createChaos(live, knobs, envelope)
+    // The engine reads these on every note and grain, outside any effect, so
+    // it gets the plain objects. The proxies above still write to them.
+    chaos = createChaos(live, toRaw(knobs), toRaw(envelope))
     chaos.setKeys(keysMode.value)
     const engine = chaos.stats
     poll = setInterval(() => Object.assign(stats, engine), 100)
@@ -419,10 +421,10 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
       <Scope :analyser="analyser" :active="active" />
     </div>
     <div class="chaos-adsr">
-      <AdsrEditor v-model="envModel" />
+      <AdsrEditor v-model="envModel" compact />
     </div>
     <div class="chaos-take" :class="{ rec: recording }">
-      <BufferView :buffer="source.buffer" :version="source.version" />
+      <BufferView class="chaos-wave" :buffer="source.buffer" :version="source.version" />
       <span class="chaos-source">pads mangle: {{ source.name.toLowerCase() }}</span>
       <span v-if="note" class="chaos-note">{{ note }}</span>
     </div>
@@ -443,6 +445,7 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
       >
         <BufferView
           v-if="track.buffer"
+          class="chaos-wave"
           :buffer="track.buffer"
           :position="phases[i] == null ? null : phases[i]! * track.buffer.duration"
         />
@@ -455,8 +458,8 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
       class="chaos-mpk"
       :knobs="knobList"
       :pads="padList"
-      :pad-down="(n) => down.has(n)"
-      :key-down="(n) => keys.has(n)"
+      :pads-down="down"
+      :keys-down="keys"
       :joystick="joystick"
       @knob="setKnob"
       @pad-press="clickPad"
@@ -464,9 +467,7 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
       @press="pressKey"
       @release="releaseKey"
     >
-      <button v-no-focus class="chaos-latch" :class="{ on: latch }" @click="toggleLatch">
-        pads: {{ latch ? 'latch' : 'hold' }}
-      </button>
+      <ToggleChip class="chaos-latch" :on="latch" @click="toggleLatch">pads: {{ latch ? 'latch' : 'hold' }}</ToggleChip>
     </MpkMini>
   </div>
 </template>
@@ -530,18 +531,28 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
   background: var(--surface);
 }
 
-/* Only the letters fit at this size. */
-.chaos-adsr :deep(.value),
-.chaos-adsr :deep(.note) {
-  display: none;
+/* The picture fills the tile; labels sit on top of it, all in one grid cell,
+   sized by the tile (not by the canvas inside). */
+.chaos-take,
+.chaos-track {
+  display: grid;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
 }
 
-.chaos-adsr :deep(.letter) {
-  font-size: 40px;
+.chaos-take > *,
+.chaos-track > * {
+  grid-area: 1 / 1;
+  z-index: 3;
+}
+
+.chaos-wave {
+  z-index: auto;
+  min-width: 0;
+  height: 100%;
+  background: none;
 }
 
 .chaos-take {
-  position: relative;
   grid-area: take;
   height: 5rem;
   border: 2px solid transparent;
@@ -553,26 +564,17 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
   border-color: var(--accent);
 }
 
-.chaos-take :deep(.buffer-view) {
-  height: 100%;
-  background: none;
-}
-
 .chaos-note {
-  position: absolute;
-  bottom: 0.3rem;
-  left: 0.5rem;
-  z-index: 3;
+  place-self: end start;
+  margin: 0.3rem 0.5rem;
   color: var(--accent);
   font-family: var(--font-mono);
   font-size: 0.55rem;
 }
 
 .chaos-source {
-  z-index: 3;
-  position: absolute;
-  top: 0.3rem;
-  left: 0.5rem;
+  place-self: start;
+  margin: 0.3rem 0.5rem;
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.55rem;
@@ -609,7 +611,6 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
 }
 
 .chaos-track {
-  position: relative;
   overflow: hidden;
   border: 2px dashed var(--wire);
   border-radius: 0.4rem;
@@ -634,7 +635,7 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
   border-color: var(--accent);
 }
 
-.chaos-track.muted :deep(.buffer-view) {
+.chaos-track.muted .chaos-wave {
   opacity: 0.3;
 }
 
@@ -644,22 +645,18 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
   }
 }
 
-.chaos-track :deep(.buffer-view) {
-  height: 100%;
-  background: none;
+.chaos-track .chaos-wave {
   pointer-events: none;
 }
 
 .chaos-fill {
-  position: absolute;
-  inset: 0 auto 0 0;
+  z-index: auto;
+  justify-self: start;
   background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .chaos-track-number,
 .chaos-track-label {
-  position: absolute;
-  z-index: 3;
   padding: 0 0.2rem;
   border-radius: 0.2rem;
   background: var(--surface);
@@ -668,16 +665,16 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
 }
 
 .chaos-track-number {
-  top: 0.2rem;
-  left: 0.4rem;
+  place-self: start;
+  margin: 0.2rem 0.4rem;
   color: var(--ink);
   font-size: 0.6rem;
   font-weight: 700;
 }
 
 .chaos-track-label {
-  right: 0.4rem;
-  bottom: 0.2rem;
+  place-self: end;
+  margin: 0.2rem 0.4rem;
   color: var(--muted);
   font-size: 0.5rem;
 }
@@ -689,20 +686,11 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
 
 .chaos-latch {
   padding: 0.15em 0.5em;
-  border: 2px solid var(--wire);
-  border-radius: 999px;
-  background: var(--bg);
-  color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.5rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
 }
 
-.chaos-latch.on {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--bg);
+.chaos-latch:not(.on) {
+  background: var(--bg);
 }
 </style>

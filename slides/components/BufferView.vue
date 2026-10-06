@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import type { LoopRegion } from '../audio/useClipRegion'
+import { fitCanvas } from '../lib/canvas'
 
 // An AudioBuffer drawn from its own samples:
 //   <BufferView :buffer="buffer" :version="version" :position="seconds" />
@@ -11,19 +13,17 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 // loop and adds a drag handle at each end. With `selectable`, dragging across
 // the waveform marks a new region (a click alone keeps the old one). With
 // `seekable`, `@seek` gets the time clicked. The default slot is laid over the waveform (positioned against
-// it) for pictures of what's playing.
-export interface LoopRegion {
-  start: number
-  end: number
-}
+// it) for pictures of what's playing. `loopActive: false` dims the loop to a
+// preview of where it would go.
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   buffer?: AudioBuffer
   version?: number
   position?: number | null
   seekable?: boolean
   selectable?: boolean
-}>()
+  loopActive?: boolean
+}>(), { loopActive: true })
 const loop = defineModel<LoopRegion | null>('loop', { default: null })
 const emit = defineEmits<{ seek: [seconds: number] }>()
 
@@ -34,17 +34,11 @@ const MIN_LOOP = 0.05
 const canvas = ref<HTMLCanvasElement>()
 
 function draw() {
-  const el = canvas.value
-  if (!el) return
-  const scale = devicePixelRatio * 2
-  const w = Math.round(el.clientWidth * scale)
-  const h = Math.round(el.clientHeight * scale)
-  if (el.width !== w || el.height !== h) Object.assign(el, { width: w, height: h })
-  const g = el.getContext('2d')!
-  const style = getComputedStyle(el)
-  g.clearRect(0, 0, w, h)
+  const fit = fitCanvas(canvas.value)
+  if (!fit) return
+  const { g, w, h, scale, color } = fit
 
-  g.fillStyle = style.getPropertyValue('--wire')
+  g.fillStyle = color('--wire')
   g.fillRect(0, h / 2 - scale / 2, w, scale)
 
   const buffer = props.buffer
@@ -52,7 +46,7 @@ function draw() {
   // Mono pictures: the first channel stands in for the rest.
   const data = buffer.getChannelData(0)
   const per = data.length / w
-  g.fillStyle = style.getPropertyValue('--signal')
+  g.fillStyle = color('--signal')
   for (let x = 0; x < w; x++) {
     let min = 0
     let max = 0
@@ -156,7 +150,7 @@ function down(e: PointerEvent) {
   >
     <canvas ref="canvas" />
     <slot />
-    <div v-if="region" class="buffer-loop" :style="region">
+    <div v-if="region" class="buffer-loop" :class="{ idle: !loopActive }" :style="region">
       <div
         v-for="end in (['start', 'end'] as const)"
         :key="end"
@@ -203,6 +197,10 @@ canvas {
   border-inline: 2px solid var(--accent);
 }
 
+.buffer-loop.idle {
+  opacity: 0.35;
+}
+
 /* A wide, invisible grab area centred on each edge, with a visible tab. */
 .buffer-handle {
   position: absolute;
@@ -227,9 +225,9 @@ canvas {
   position: absolute;
   top: 0;
   left: 50%;
+  translate: -50%;
   width: 0.7rem;
   height: 1.1rem;
-  margin-left: -0.35rem;
   border-radius: 0 0 0.25rem 0.25rem;
   background: var(--accent);
 }

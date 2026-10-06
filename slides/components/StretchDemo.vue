@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, shallowRef, toRaw, watch } from 'vue'
 import { analyser, unlock } from '../audio/audio'
 import type { Grain, WindowName } from '../audio/grains'
 import { GRAIN, hopOf, playGrain, playGrains } from '../audio/grains'
 import type { PlaybackParams } from '../audio/playhead'
 import { Playhead } from '../audio/playhead'
 import { load, picked as clip } from '../audio/samples'
-import { useDemo, vNoFocus } from '../audio/useDemo'
+import { useDemo } from '../audio/useDemo'
 
 // The grain slides: the picked clip, looping, drawn as its signal chain with
 // the controls in the nodes. The grain engine (audio/grains.ts) plays it;
@@ -29,10 +29,14 @@ const settings = reactive({
   window: (props.stage === 'chop' ? 'rectangle' : 'hann') as WindowName,
   overlap: full,
 })
+// The engine reads the settings for every grain it schedules, outside any
+// effect. It gets the plain object, so those reads skip the proxy.
+const engineSettings = toRaw(settings)
 const preserve = ref(true)
 const playing = ref(false)
 const position = ref<number | null>(null)
-const shown = ref<(Grain & { opacity: number })[]>([])
+// Replaced whole every frame, never changed in place.
+const shown = shallowRef<(Grain & { opacity: number })[]>([])
 // Where it's paused, in seconds into the clip; null when it isn't.
 const paused = ref<number | null>(null)
 
@@ -63,12 +67,13 @@ const { ctx, out } = useDemo({
 
 const buffer = computed(() => clip.value.buffer)
 
-const nodes = [
-  { key: 'buffer', label: 'AudioBuffer' },
-  { key: 'source', label: 'AudioBufferSourceNode' },
-  { key: 'fade', label: 'GainNode' },
-  { key: 'out', label: 'destination' },
-]
+const nodes = computed(() => [
+  { key: 'buffer', label: 'AudioBuffer', style: { width: '10rem' } },
+  { key: 'source', label: 'AudioBufferSourceNode', style: { flex: 1, minWidth: 0, alignItems: 'flex-start' } },
+  // Faded out when it isn't used: one plain source has no grains to fade.
+  { key: 'fade', label: 'GainNode', style: { width: '10.5rem', opacity: preserve.value ? 1 : 0.35 } },
+  { key: 'out', label: 'destination', style: { width: '8.5rem' } },
+])
 
 const plainParams = (): PlaybackParams => ({
   playbackRate: settings.speed,
@@ -138,7 +143,7 @@ async function play(from = 0) {
   if (!active.value || gen !== generation) return
 
   if (preserve.value) {
-    engine = playGrains(buffer, out.value, settings, from, (g) => scheduled.push(g))
+    engine = playGrains(buffer, out.value, engineSettings, from, (g) => scheduled.push(g))
   } else {
     source = new AudioBufferSourceNode(ctx, { buffer, loop: true })
     source.playbackRate.value = settings.speed
@@ -193,7 +198,7 @@ async function step(by: number) {
   const k = Math.min(last, Math.max(0, Math.round((paused.value ?? 0) / readHop()) + by))
   hold(k * readHop())
   single?.stop()
-  single = playGrain(buffer, out.value, settings, k * readHop())
+  single = playGrain(buffer, out.value, engineSettings, k * readHop())
 }
 
 // The grain engine reads the settings for each grain; a plain source needs
@@ -231,9 +236,9 @@ watch(
 
 <template>
   <div class="stretch-demo">
-    <SignalChain class="chain" :class="{ plain: !preserve }" :nodes="nodes">
+    <SignalChain class="chain" stretch :nodes="nodes">
       <template #buffer>
-        <ClipPicker compact />
+        <ClipPicker variant="compact" />
       </template>
       <template #source>
         <div class="sub">
@@ -266,12 +271,12 @@ watch(
       <div class="stretch-buttons">
         <PlayButton :playing="playing" pauses @play="toggle" />
         <div v-if="preserve" class="stretch-step">
-          <button v-no-focus @click="step(-1)">‹ grain</button>
-          <button v-no-focus @click="step(1)">grain ›</button>
+          <ToggleChip class="stretch-step-button" @click="step(-1)">‹ grain</ToggleChip>
+          <ToggleChip class="stretch-step-button" @click="step(1)">grain ›</ToggleChip>
         </div>
-        <button v-if="full" v-no-focus class="stretch-toggle" :class="{ on: preserve }" @click="preserve = !preserve">
+        <ToggleChip v-if="full" class="stretch-toggle" :on="preserve" @click="preserve = !preserve">
           preserve pitch
-        </button>
+        </ToggleChip>
       </div>
       <StretchView
         class="stretch-view"
@@ -298,47 +303,8 @@ watch(
 }
 
 .chain {
-  align-items: stretch;
-}
-
-.chain :deep(.wire) {
-  align-self: center;
-}
-
-.chain :deep(.node) {
-  justify-content: flex-start;
-  padding: 0.45rem 0.6rem;
-}
-
-.chain :deep(.node:nth-of-type(1)) {
-  width: 10rem;
-}
-
-.chain :deep(.node:nth-of-type(2)) {
-  flex: 1;
-  min-width: 0;
-  align-items: flex-start;
-}
-
-.chain :deep(.node:nth-of-type(3)) {
-  width: 10.5rem;
-  transition: opacity 0.2s;
-}
-
-.chain.plain :deep(.node:nth-of-type(3)) {
-  opacity: 0.35;
-}
-
-.chain :deep(.node:nth-of-type(4)) {
-  width: 8.5rem;
-}
-
-.chain :deep(.slider-value) {
-  min-width: 3ch;
-}
-
-.chain :deep(.slider input) {
-  width: 6em;
+  --node-padding: 0.45rem 0.6rem;
+  --slider-width: 6em;
 }
 
 .sub {
@@ -350,14 +316,11 @@ watch(
 
 .windows {
   width: 100%;
+  --shape-padding: 0.2rem 0.3rem 0.15rem;
 }
 
 .windows.single {
   grid-template-columns: 1fr;
-}
-
-.windows :deep(.shape) {
-  padding: 0.2rem 0.3rem 0.15rem;
 }
 
 .scope {
@@ -392,41 +355,15 @@ watch(
   gap: 0.3rem;
 }
 
-.stretch-step button {
+.stretch-step-button {
   flex: 1;
   padding: 0.2em 0.5em;
-  border: 2px solid var(--wire);
-  border-radius: 999px;
-  background: none;
-  color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.6rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.stretch-step button:hover {
-  border-color: var(--accent);
-  color: var(--accent);
 }
 
 .stretch-toggle {
-  padding: 0.3em 0.8em;
-  border: 2px solid var(--wire);
-  border-radius: 999px;
-  background: none;
-  color: var(--muted);
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.stretch-toggle.on {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--bg);
 }
 </style>

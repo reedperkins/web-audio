@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { held, pressKey, releaseKey } from '../audio/input'
 import { progression } from '../audio/presets'
 import { cut, playInto, releaseAll } from '../audio/synth'
-import { useDemo, vNoFocus } from '../audio/useDemo'
+import { useDemo } from '../audio/useDemo'
 
 // The "Polyphony" demo. On this slide MIDI and the on-screen keys play the
 // shared synth. Click a chord button and its notes go down, then let go after
@@ -80,25 +80,25 @@ function pick(index: number) {
 <template>
   <div class="voices-demo">
     <div class="chords">
-      <button
+      <ToggleChip
         v-for="(chord, i) in progression"
         :key="chord.name"
-        v-no-focus
+        action
         class="chord"
-        :class="{ on: current === i }"
+        :on="current === i"
         @click="pick(i)"
       >
         {{ chord.name }}
-      </button>
-      <button v-no-focus class="chord cycle" :class="{ on: cycling }" @click="toggleCycle">
+      </ToggleChip>
+      <ToggleChip action class="chord cycle" :on="cycling" @click="toggleCycle">
         {{ cycling ? '■' : '▶' }} Cycle
-      </button>
+      </ToggleChip>
     </div>
     <Keyboard
       class="piano"
       :from="41"
       :count="36"
-      :is-down="(n) => held.has(n)"
+      :down="held"
       @press="pressKey"
       @release="releaseKey"
     />
@@ -120,25 +120,10 @@ function pick(index: number) {
 }
 
 .chord {
-  display: inline-flex;
   align-items: baseline;
-  justify-content: center;
   padding: 0.3em 0.15em;
-  border: 2px solid var(--accent);
   border-radius: 6px;
-  background: none;
-  color: var(--accent);
-  font-family: var(--font-body);
   font-size: 0.68rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.chord:hover,
-.chord.on {
-  background: var(--accent);
-  color: var(--bg);
 }
 
 .cycle {

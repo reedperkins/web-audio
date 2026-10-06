@@ -8,7 +8,8 @@ import { playSequence } from '../audio/sequencer'
 import type { Song } from '../audio/songs'
 import { songs } from '../audio/songs'
 import { playInto, releaseAll, wave } from '../audio/synth'
-import { useDemo, vNoFocus } from '../audio/useDemo'
+import { useDemo } from '../audio/useDemo'
+import { duration } from '../lib/format'
 
 // The "Wave types" demo: the synth's settings drawn as its audio graph.
 // OscillatorNode picks the wave, GainNode holds the envelope, and the
@@ -33,9 +34,9 @@ let previewTimer: ReturnType<typeof setTimeout> | undefined
 let previewing = false
 
 const nodes = [
-  { key: 'osc', label: 'OscillatorNode' },
-  { key: 'amp', label: 'GainNode' },
-  { key: 'out', label: 'destination' },
+  { key: 'osc', label: 'OscillatorNode', style: { width: '11rem' } },
+  { key: 'amp', label: 'GainNode', style: { flex: 1, minWidth: 0 } },
+  { key: 'out', label: 'destination', style: { width: '9rem' } },
 ]
 
 const waveModel = computed({
@@ -48,12 +49,11 @@ const envModel = computed({
   set: (value: Envelope) => Object.assign(env, value),
 })
 
-const ms = (t: number) => (t < 1 ? `${Math.round(t * 1000)} ms` : `${t.toFixed(2)} s`)
 const envValues = computed(() => [
-  { key: 'A', value: ms(env.attack) },
-  { key: 'D', value: ms(env.decay) },
+  { key: 'A', value: duration(env.attack) },
+  { key: 'D', value: duration(env.decay) },
   { key: 'S', value: env.sustain.toFixed(2) },
-  { key: 'R', value: ms(env.release) },
+  { key: 'R', value: duration(env.release) },
 ])
 
 function enter() {
@@ -109,13 +109,13 @@ async function toggle(song: Song) {
 
 <template>
   <div class="wave-demo">
-    <SignalChain class="chain" :nodes="nodes">
+    <SignalChain class="chain" stretch :nodes="nodes">
       <template #osc>
         <WaveShapes v-model="waveModel" class="waves" @pick="preview" />
       </template>
       <template #amp>
         <div class="sub">envelope on <code>gain</code></div>
-        <AdsrEditor v-model="envModel" class="adsr" @commit="preview" />
+        <AdsrEditor v-model="envModel" class="adsr" compact @commit="preview" />
         <div class="env-values">
           <span v-for="v in envValues" :key="v.key"><b>{{ v.key }}</b> {{ v.value }}</span>
         </div>
@@ -129,18 +129,18 @@ async function toggle(song: Song) {
     <!-- PLACEHOLDER(refine): song panel look -->
     <div class="songs">
       <span class="songs-label">Songs</span>
-      <button
+      <ToggleChip
         v-for="song in songs"
         :key="song.name"
-        v-no-focus
+        action
         class="song"
-        :class="{ on: playing === song }"
+        :on="playing === song"
         @click="toggle(song)"
       >
         <span class="icon">{{ playing === song ? '■' : '▶' }}</span>
         <span class="song-name">{{ song.name }}</span>
         <span class="song-wave">'{{ song.wave }}'</span>
-      </button>
+      </ToggleChip>
     </div>
   </div>
 </template>
@@ -154,29 +154,7 @@ async function toggle(song: Song) {
 }
 
 .chain {
-  align-items: stretch;
-}
-
-.chain :deep(.wire) {
-  align-self: center;
-}
-
-.chain :deep(.node) {
-  justify-content: flex-start;
-  padding: 0.5rem 0.7rem;
-}
-
-.chain :deep(.node:nth-of-type(1)) {
-  width: 11rem;
-}
-
-.chain :deep(.node:nth-of-type(2)) {
-  flex: 1;
-  min-width: 0;
-}
-
-.chain :deep(.node:nth-of-type(3)) {
-  width: 9rem;
+  --node-padding: 0.5rem 0.7rem;
 }
 
 .waves {
@@ -194,18 +172,9 @@ async function toggle(song: Song) {
   font-size: 1em;
 }
 
-/* Small here, so only the letters stay; the values go in a line below. */
+/* Small here, so it's compact; the values go in a line below. */
 .adsr {
   margin-top: -0.4rem;
-}
-
-.adsr :deep(.value),
-.adsr :deep(.note) {
-  display: none;
-}
-
-.adsr :deep(.letter) {
-  font-size: 34px;
 }
 
 .env-values {
@@ -245,25 +214,8 @@ async function toggle(song: Song) {
 }
 
 .song {
-  display: inline-flex;
   align-items: baseline;
-  gap: 0.45em;
   padding: 0.35em 0.8em;
-  border: 2px solid var(--accent);
-  border-radius: 999px;
-  background: none;
-  color: var(--accent);
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.song:hover,
-.song.on {
-  background: var(--accent);
-  color: var(--bg);
 }
 
 .icon {

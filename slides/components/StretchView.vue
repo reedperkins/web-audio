@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Grain, WindowName } from '../audio/grains'
 import { GRAIN, fadeOf, hopOf, stretched } from '../audio/grains'
-import { vNoFocus } from '../audio/useDemo'
+import { fitCanvas } from '../lib/canvas'
 
 // The whole clip before and after stretching, on one time scale:
 //   <StretchView :buffer :version v-model:speed :semitones :window :granular
@@ -27,7 +27,6 @@ import { vNoFocus } from '../audio/useDemo'
 const props = defineProps<{
   buffer?: AudioBuffer
   version?: number
-  speed: number
   semitones: number
   window: WindowName
   granular: boolean
@@ -36,31 +35,41 @@ const props = defineProps<{
   position?: number | null
   grains?: (Grain & { opacity: number })[]
 }>()
-const emit = defineEmits<{ 'update:speed': [speed: number] }>()
+const speed = defineModel<number>('speed', { required: true })
 
 // PLACEHOLDER(refine): stretch view look
-// Lane edges, as shares of the height: output on top, original below.
+// Lane edges, as shares of the height: output on top, original below. The
+// overlays get the same edges through v-bind() in the styles.
 const OUT = [0.1, 0.42]
+const IN = [0.62, 0.94]
+const lanes = {
+  out: { top: `${OUT[0] * 100}%`, height: `${(OUT[1] - OUT[0]) * 100}%` },
+  in: { top: `${IN[0] * 100}%`, height: `${(IN[1] - IN[0]) * 100}%` },
+  bridge: { top: `${OUT[1] * 100}%`, height: `${(IN[0] - OUT[1]) * 100}%` },
+}
 // Samples worked out per pixel column of the output.
 const PER_COLUMN = 24
-const IN = [0.62, 0.94]
 
 const canvas = ref<HTMLCanvasElement>()
 
 const ratio = computed(() => 2 ** (props.semitones / 12))
 // How much longer the output is than the original.
-const stretch = computed(() => 1 / (props.granular ? props.speed : props.speed * ratio.value))
+const stretch = computed(() => 1 / (props.granular ? speed.value : speed.value * ratio.value))
 const inDur = computed(() => props.buffer?.duration ?? 1)
 const outDur = computed(() => inDur.value * stretch.value)
 // Seconds across the full width: whichever lane is longer fills it.
 const span = computed(() => Math.max(inDur.value, outDur.value))
 
 // Seconds across the width when zoomed in; null shows everything.
-const ZOOMS = [null, 2, 0.5] as const
+const ZOOMS = [null, 2, 0.5].map((z) => ({ value: z, label: z === null ? 'all' : `${z} s` }))
 const zoom = ref<number | null>(null)
 // Seconds into the original at the zoomed view's left edge.
 const start = ref(0)
 const layout = ref<'lanes' | 'stacked'>('lanes')
+const LAYOUTS = [
+  { value: 'lanes' as const, label: 'lanes' },
+  { value: 'stacked' as const, label: 'stacked' },
+]
 // Stacked: how many rows, and where the top row reads from in the original.
 const ROWS = 9
 const stackStart = ref(0)
@@ -80,7 +89,7 @@ const view = computed(() => {
 
 // The engine's settings, as the pictures need them.
 const settings = computed(() => ({
-  speed: props.speed,
+  speed: speed.value,
   semitones: props.semitones,
   window: props.window,
   overlap: props.overlap ?? true,
@@ -89,20 +98,11 @@ const settings = computed(() => ({
 watch(() => [props.buffer, props.version, settings.value, props.granular], draw)
 
 function draw() {
-  const el = canvas.value
+  const fit = fitCanvas(canvas.value)
   const buffer = props.buffer
-  if (!el) return
-  const scale = devicePixelRatio * 2
-  const W = Math.round(el.clientWidth * scale)
-  const H = Math.round(el.clientHeight * scale)
-  if (!W || !H) return
-  if (el.width !== W || el.height !== H) Object.assign(el, { width: W, height: H })
-  const g = el.getContext('2d')!
-  const style = getComputedStyle(el)
-  const color = (name: string) => style.getPropertyValue(name).trim()
+  if (!fit || !buffer) return
+  const { g, w: W, h: H, scale, color } = fit
   const colors = [color('--accent'), color('--signal')]
-  g.clearRect(0, 0, W, H)
-  if (!buffer) return
   if (stacked.value) return drawStacked(g, W, H, scale, colors, color)
 
   const { secs, inAt, outAt } = view.value
@@ -116,7 +116,7 @@ function draw() {
   const half = (outBottom - outTop) / 2
   const hop = hopOf(settings.value)
   // How far the read position moves from one grain to the next.
-  const readHop = props.speed * hop
+  const readHop = speed.value * hop
   const strength = Math.min(1, Math.max(0, ((GRAIN / secs) * W) / (60 * scale)))
 
   // Drift: a line from where each grain starts reading in the original to
@@ -282,7 +282,7 @@ function drawStacked(
   color: (name: string) => string,
 ) {
   const hop = hopOf(settings.value)
-  const readHop = props.speed * hop
+  const readHop = speed.value * hop
   const readSpan = GRAIN * ratio.value
   const fade = fadeOf(settings.value)
   const count = Math.ceil(outDur.value / hop)
@@ -379,7 +379,7 @@ function drawStacked(
 function pageRows() {
   const p = props.position
   if (p == null || !stacked.value) return
-  const readHop = props.speed * hopOf(settings.value)
+  const readHop = speed.value * hopOf(settings.value)
   const k = Math.floor(p / readHop + 1e-6)
   const kTop = Math.round(stackStart.value / readHop)
   if (k < kTop || k >= kTop + ROWS) stackStart.value = Math.max(0, k - 1) * readHop
@@ -437,7 +437,7 @@ const labels = computed(() => ({
     name: 'original',
     details: [
       fmt(inDur.value),
-      ...(props.granular ? [`grains ${ms(props.speed * hopOf(settings.value))} apart`, reads.value] : []),
+      ...(props.granular ? [`grains ${ms(speed.value * hopOf(settings.value))} apart`, reads.value] : []),
     ],
   },
 }))
@@ -446,7 +446,7 @@ const labels = computed(() => ({
 // down (the same audio played again), less than once when sped up past the
 // point where grains stop touching.
 const reads = computed(() => {
-  const n = (GRAIN * ratio.value) / (props.speed * hopOf(settings.value))
+  const n = (GRAIN * ratio.value) / (speed.value * hopOf(settings.value))
   if (n < 0.999) return 'some skipped'
   const whole = Math.round(n)
   return `each bit read ${Math.abs(n - whole) < 0.05 ? whole : `~${n.toFixed(1)}`}×`
@@ -470,7 +470,7 @@ let moved = false
 function grab(e: PointerEvent) {
   dragX = e.clientX
   moved = false
-  dragSpeed = props.speed
+  dragSpeed = speed.value
   ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
 }
 
@@ -481,8 +481,8 @@ function drag(e: PointerEvent) {
   const dx = ((e.clientX - dragX) / box.width) * canvas.value!.clientWidth
   if (Math.abs(dx) < 4 && !moved) return
   moved = true
-  const speed = Math.min(MAX_SPEED, Math.max(MIN_SPEED, dragSpeed * 2 ** (-dx / STRETCH_PX)))
-  emit('update:speed', Math.round(speed * 20) / 20)
+  const next = Math.min(MAX_SPEED, Math.max(MIN_SPEED, dragSpeed * 2 ** (-dx / STRETCH_PX)))
+  speed.value = Math.round(next * 20) / 20
 }
 
 // A click without a drag, zoomed in: turn the page to there, in the lane
@@ -595,22 +595,9 @@ onUnmounted(() => resize.disconnect())
       </template>
       <div class="zooms" @pointerdown.stop>
         <template v-if="granular">
-          <button
-            v-for="l in ['lanes', 'stacked'] as const"
-            :key="l"
-            v-no-focus
-            :class="{ on: layout === l }"
-            @click="layout = l"
-          >
-            {{ l }}
-          </button>
+          <Segmented v-model="layout" class="zoom-chips" size="sm" :options="LAYOUTS" />
         </template>
-        <template v-if="!stacked">
-          <span class="gap">zoom</span>
-          <button v-for="z in ZOOMS" :key="z ?? 'all'" v-no-focus :class="{ on: zoom === z }" @click="zoom = z">
-            {{ z === null ? 'all' : `${z} s` }}
-          </button>
-        </template>
+        <Segmented v-if="!stacked" v-model="zoom" label="zoom" class="zoom-chips gap" size="sm" :options="ZOOMS" />
       </div>
       <span class="hint">↔ drag to stretch<template v-if="zoom !== null && !stacked"> · click to move</template></span>
     </div>
@@ -673,13 +660,13 @@ canvas {
   height: 100%;
 }
 
-/* Between the lanes: from OUT's bottom to IN's top in the script. */
+/* Between the lanes: from OUT's bottom to IN's top. */
 .bridge {
   position: absolute;
-  top: 42%;
+  top: v-bind('lanes.bridge.top');
   left: 0;
   width: 100%;
-  height: 20%;
+  height: v-bind('lanes.bridge.height');
   overflow: visible;
   pointer-events: none;
 }
@@ -691,15 +678,14 @@ canvas {
   vector-effect: non-scaling-stroke;
 }
 
-/* Matches OUT and IN in the script. */
 .out {
-  top: 10%;
-  height: 32%;
+  top: v-bind('lanes.out.top');
+  height: v-bind('lanes.out.height');
 }
 
 .in {
-  top: 62%;
-  height: 32%;
+  top: v-bind('lanes.in.top');
+  height: v-bind('lanes.in.height');
 }
 
 .lit,
@@ -770,20 +756,8 @@ canvas {
   margin-left: 0.4rem;
 }
 
-.zooms button {
-  padding: 0 0.5em;
-  border: 1px solid var(--wire);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-  font: inherit;
-  cursor: pointer;
-}
-
-.zooms button.on {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--bg);
+.zoom-chips {
+  font-size: inherit;
 }
 
 .hint {

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { held } from '../audio/input'
 import { mtof } from '../audio/mtof'
-import { vNoFocus } from '../audio/useDemo'
 
 // 5b: the `mtof` curve, MIDI note across, Hz up (linear, so the curve bends).
 // A dot on every A (keyed off A 440 = note 69) shows the doubling with
@@ -10,7 +9,10 @@ import { vNoFocus } from '../audio/useDemo'
 // pointer, get a dot on the curve with their frequency.
 // The Linear / Log toggle switches the Hz axis. On a log axis every octave is
 // the same height, so the curve straightens into a line: equal steps in note
-// number are equal ratios in frequency. The switch animates between the two.
+// number are equal ratios in frequency. The switch animates between the two
+// in CSS: the curve and guides by their `d` path, the dots by `cy`, the labels
+// by `translate`, and each axis's ticks fade. Every path keeps the same
+// commands on both axes, which is what lets `d` transition.
 // PLACEHOLDER(refine): graph look
 const FROM = 33
 const TO = 93
@@ -28,27 +30,17 @@ const yLinear = (hz: number) => M.top + plotH * (1 - hz / MAX_HZ)
 const yLog = (hz: number) =>
   M.top + plotH * (1 - Math.log2(hz / LOG_HZ.min) / Math.log2(LOG_HZ.max / LOG_HZ.min))
 
-// 0 = linear axis, 1 = log axis; in between while the switch animates.
-const log = ref(false)
-const mix = ref(0)
-const y = (hz: number) => yLinear(hz) + (yLog(hz) - yLinear(hz)) * mix.value
+const scale = ref<'linear' | 'log'>('linear')
+const SCALES = [
+  { value: 'linear' as const, label: 'Linear' },
+  { value: 'log' as const, label: 'Log' },
+]
+const y = (hz: number) => (scale.value === 'log' ? yLog(hz) : yLinear(hz))
 
-const MORPH_MS = 600
-let frame = 0
-watch(log, (on) => {
-  cancelAnimationFrame(frame)
-  const start = performance.now()
-  const from = mix.value
-  const to = on ? 1 : 0
-  const step = (now: number) => {
-    const t = Math.min(1, (now - start) / MORPH_MS)
-    const eased = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2
-    mix.value = from + (to - from) * eased
-    if (t < 1) frame = requestAnimationFrame(step)
-  }
-  frame = requestAnimationFrame(step)
-})
-onUnmounted(() => cancelAnimationFrame(frame))
+// Inline styles for the animated geometry.
+const d = (path: string) => ({ d: `path('${path}')` })
+const cy = (py: number) => ({ cy: `${py}px` })
+const at = (py: number) => ({ translate: `0 ${py}px` })
 
 const curve = computed(() =>
   Array.from({ length: (TO - FROM) * 4 + 1 }, (_, i) => FROM + i / 4)
@@ -56,8 +48,7 @@ const curve = computed(() =>
     .join(''),
 )
 const as = Array.from({ length: (TO - FROM) / 12 + 1 }, (_, i) => FROM + i * 12)
-// Each axis has its own ticks; they cross-fade during the switch. (Opacity is
-// set as a style: Slidev's UnoCSS reads an `opacity` attribute as a utility.)
+// Each axis has its own ticks; they cross-fade during the switch.
 const linearTicks = [0, 500, 1000, 1500]
 const logTicks = as.map(mtof)
 
@@ -77,37 +68,38 @@ const marks = computed(() => {
   return notes.map((note, i) => {
     const hz = mtof(note)
     const px = x(note)
-    return { note, hz, px, py: y(hz), labelled: i === notes.length - 1, flip: px > W - 140 }
+    const py = y(hz)
+    // Down from the dot to the note axis, and across to the Hz axis.
+    const guide = `M${px.toFixed(1)},${py.toFixed(1)}L${px.toFixed(1)},${H - M.bottom}M${M.left},${py.toFixed(1)}L${px.toFixed(1)},${py.toFixed(1)}`
+    return { note, hz, px, py, guide, labelled: i === notes.length - 1, flip: px > W - 140 }
   })
 })
 </script>
 
 <template>
   <div class="pitch-graph-wrap">
-    <div class="scale-toggle" role="group" aria-label="Hz axis">
-      <button v-no-focus :class="{ on: !log }" @click="log = false">Linear</button>
-      <button v-no-focus :class="{ on: log }" @click="log = true">Log</button>
-    </div>
+    <Segmented v-model="scale" class="scale-toggle" :options="SCALES" aria-label="Hz axis" />
     <svg
       ref="svg"
       class="pitch-graph"
+      :class="scale"
       :viewBox="`0 0 ${W} ${H}`"
       role="img"
       aria-label="Frequency doubles every 12 MIDI notes"
       @pointermove="hover"
       @pointerleave="hovered = null"
     >
-      <g class="grid" :style="{ opacity: 1 - mix }">
+      <g class="grid on-linear">
         <line v-for="hz in linearTicks" :key="hz" :x1="M.left" :x2="W - M.right" :y1="yLinear(hz)" :y2="yLinear(hz)" />
       </g>
-      <g class="grid" :style="{ opacity: mix }">
+      <g class="grid on-log">
         <line v-for="hz in logTicks" :key="hz" :x1="M.left" :x2="W - M.right" :y1="yLog(hz)" :y2="yLog(hz)" />
       </g>
       <g class="axis">
-        <g :style="{ opacity: 1 - mix }">
+        <g class="on-linear">
           <text v-for="hz in linearTicks" :key="hz" :x="M.left - 8" :y="yLinear(hz) + 4" text-anchor="end">{{ hz }}</text>
         </g>
-        <g :style="{ opacity: mix }">
+        <g class="on-log">
           <text v-for="hz in logTicks" :key="hz" :x="M.left - 8" :y="yLog(hz) + 4" text-anchor="end">{{ hz }}</text>
         </g>
         <text :x="M.left - 8" :y="M.top - 1" text-anchor="end" class="unit">Hz</text>
@@ -115,26 +107,26 @@ const marks = computed(() => {
         <text :x="W - M.right" :y="H - 2" text-anchor="end" class="unit">MIDI note</text>
       </g>
 
-      <g v-for="m in marks" :key="m.note" class="guide">
-        <line :x1="m.px" :x2="m.px" :y1="m.py" :y2="H - M.bottom" />
-        <line :x1="M.left" :x2="m.px" :y1="m.py" :y2="m.py" />
-      </g>
+      <path v-for="m in marks" :key="m.note" class="guide" :style="d(m.guide)" />
 
-      <path :d="curve" class="curve" />
+      <path class="curve" :style="d(curve)" />
 
       <g v-for="n in as" :key="n" class="octave">
-        <circle :cx="x(n)" :cy="y(mtof(n))" r="4.5" />
+        <circle :cx="x(n)" r="4.5" :style="cy(y(mtof(n)))" />
         <!-- On the log axis the tick labels already name every A. -->
-        <text v-if="n >= 45" :style="{ opacity: 1 - mix }" :x="x(n) - 8" :y="y(mtof(n)) - 6" text-anchor="end">{{ Math.round(mtof(n)) }}</text>
+        <text v-if="n >= 45" class="on-linear" :x="x(n) - 8" y="-6" text-anchor="end" :style="at(y(mtof(n)))">
+          {{ Math.round(mtof(n)) }}
+        </text>
       </g>
 
       <g v-for="m in marks" :key="m.note" class="mark">
-        <circle :cx="m.px" :cy="m.py" r="7" />
+        <circle :cx="m.px" r="7" :style="cy(m.py)" />
         <text
           v-if="m.labelled"
           :x="m.px + (m.flip ? -12 : 12)"
-          :y="m.py + (m.flip ? -10 : 24)"
+          :y="m.flip ? -10 : 24"
           :text-anchor="m.flip ? 'end' : 'start'"
+          :style="at(m.py)"
         >{{ m.note }} → {{ m.hz.toFixed(1) }} Hz</text>
       </g>
     </svg>
@@ -156,25 +148,25 @@ const marks = computed(() => {
   position: absolute;
   top: -0.2rem;
   left: 3.5rem;
-  display: flex;
-  border: 1px solid var(--wire);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.scale-toggle button {
-  padding: 0.1em 0.8em;
-  border: none;
-  background: none;
-  color: var(--muted);
   font-family: var(--font-body);
-  font-size: 0.7rem;
-  cursor: pointer;
 }
 
-.scale-toggle button.on {
-  background: var(--ink);
-  color: var(--bg);
+/* The Linear / Log switch: everything that moves, moves together. */
+.pitch-graph path,
+.pitch-graph circle,
+.pitch-graph text,
+.on-linear,
+.on-log {
+  transition:
+    d 0.6s ease-in-out,
+    cy 0.6s ease-in-out,
+    translate 0.6s ease-in-out,
+    opacity 0.6s ease-in-out;
+}
+
+.pitch-graph.log .on-linear,
+.pitch-graph.linear .on-log {
+  opacity: 0;
 }
 
 .grid line {
@@ -214,7 +206,8 @@ const marks = computed(() => {
   stroke-linejoin: round;
 }
 
-.guide line {
+.guide {
+  fill: none;
   stroke: var(--accent);
   stroke-width: 1.5;
   stroke-dasharray: 3 4;

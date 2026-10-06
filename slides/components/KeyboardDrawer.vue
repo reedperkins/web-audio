@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, onUnmounted, ref, useTemplateRef } from 'vue'
 import { connectOnScreen, held, inputs, pressKey, releaseKey } from '../audio/input'
 import { vNoFocus } from '../audio/useDemo'
-import Keyboard from './Keyboard.vue'
+import type Keyboard from './Keyboard.vue'
 
 // The backup keyboard: a tab at the bottom of the slide that pulls up an
 // on-screen keyboard. Open, it counts as a connected MIDI device and plays
 // through the same input; closing it is like unplugging one. The tab's dot
 // shows whether any input is connected.
 const open = ref(false)
-const keyboard = ref<InstanceType<typeof Keyboard>>()
+const keyboard = useTemplateRef<InstanceType<typeof Keyboard>>('keyboard')
 const connected = computed(() => inputs.value.length > 0)
 
 function toggle() {
@@ -28,7 +28,7 @@ onUnmounted(() => connectOnScreen(false))
       <span class="arrow">{{ open ? '▾' : '▴' }}</span>
     </button>
     <div class="panel">
-      <Keyboard ref="keyboard" :is-down="(n) => held.has(n)" @press="pressKey" @release="releaseKey" />
+      <Keyboard ref="keyboard" :down="held" @press="pressKey" @release="releaseKey" />
     </div>
   </div>
 </template>

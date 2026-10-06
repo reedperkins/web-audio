@@ -1,28 +1,21 @@
 <script setup lang="ts">
 import type { Sample } from '../audio/samples'
 import { picked, samples } from '../audio/samples'
-import { vNoFocus } from '../audio/useDemo'
 
 // Picks section 6's clip (`picked` in audio/samples.ts), one button per clip.
-// `compact` drops the label and fits the buttons to the width, for inside a
-// signal-chain node; `inline` puts the label and small buttons in one row.
-defineProps<{ compact?: boolean; inline?: boolean }>()
+// `variant`: 'stack' (a label over a column of buttons), 'compact' (no label,
+// buttons fit to the width, for inside a signal-chain node) or 'inline' (the
+// label and small buttons in one row).
+withDefaults(defineProps<{ variant?: 'stack' | 'compact' | 'inline' }>(), { variant: 'stack' })
 const pick = (s: Sample) => (picked.value = s)
 </script>
 
 <template>
-  <div class="clip-picker" :class="{ compact, inline }">
-    <span v-if="!compact" class="clip-picker-label">buffer</span>
-    <button
-      v-for="s in samples"
-      :key="s.id"
-      v-no-focus
-      class="clip-picker-chip"
-      :class="{ on: s === picked }"
-      @click="pick(s)"
-    >
+  <div class="clip-picker" :class="variant">
+    <span v-if="variant !== 'compact'" class="clip-picker-label">buffer</span>
+    <ToggleChip v-for="s in samples" :key="s.id" class="clip-picker-chip" :on="s === picked" @click="pick(s)">
       {{ s.name }}
-    </button>
+    </ToggleChip>
   </div>
 </template>
 
@@ -64,24 +57,5 @@ const pick = (s: Sample) => (picked.value = s)
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: var(--size-small);
-}
-
-.clip-picker-chip {
-  padding: 0.3em 0.8em;
-  border: 2px solid var(--wire);
-  border-radius: 999px;
-  background: none;
-  color: var(--muted);
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.clip-picker-chip.on {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--bg);
 }
 </style>

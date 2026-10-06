@@ -16,7 +16,7 @@ const marked = [57, 69]
       :from="57"
       :count="13"
       :marked="marked"
-      :is-down="(n) => held.has(n)"
+      :down="held"
       @press="pressKey"
       @release="releaseKey"
     >

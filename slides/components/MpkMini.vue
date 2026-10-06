@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import Keyboard from './Keyboard.vue'
 
 // An Akai MPK mini mk2 drawn on the slide, so the room sees what the hands are
 // doing: the joystick, 8 pads, 8 knobs and 25 keys, laid out like the real one.
@@ -8,25 +7,26 @@ import Keyboard from './Keyboard.vue'
 // the mouse: drag a knob up or down, hold a pad, play the keys.
 //
 //   <MpkMini :knobs="[{ label, value }]" :pads="[{ note, label }]"
-//            :pad-down="(n) => …" :key-down="(n) => …" :joystick="{ x, y }"
+//            :pads-down="downSet" :keys-down="heldSet" :joystick="{ x, y }"
 //            @knob="(i, v) => …" @pad-press="…" @pad-release="…"
 //            @press="…" @release="…" />
 //
 // Knobs are 0–1; joystick x is -1…1 and y is 0…1 (bottom to top). Pads are listed top
-// row first, four to a row. The default slot goes under the name, top left
-// (an extra control of the parent's).
+// row first, four to a row. `pads-down` and `keys-down` say which notes are
+// down: anything with `has(note)`. The default slot goes under the name, top
+// left (an extra control of the parent's).
 const props = withDefaults(
   defineProps<{
     knobs: { label: string; value: number; accent?: boolean }[]
     pads: { note: number; label: string; dashed?: boolean }[]
-    padDown?: (note: number) => boolean
-    keyDown?: (note: number) => boolean
+    padsDown?: { has(note: number): boolean }
+    keysDown?: { has(note: number): boolean }
     joystick?: { x: number; y: number }
     from?: number
   }>(),
   {
-    padDown: () => false,
-    keyDown: () => false,
+    padsDown: () => new Set<number>(),
+    keysDown: () => new Set<number>(),
     joystick: () => ({ x: 0, y: 0 }),
     from: 48,
   },
@@ -39,24 +39,23 @@ const emit = defineEmits<{
   release: [note: number]
 }>()
 
-// Knob drag: up is more, 150 px for the full turn.
-function drag(i: number, e: PointerEvent) {
-  const el = e.currentTarget as HTMLElement
-  el.setPointerCapture(e.pointerId)
-  let value = props.knobs[i].value
-  let last = e.clientY
-  const move = (m: PointerEvent) => {
-    value = Math.min(1, Math.max(0, value + (last - m.clientY) / 150))
-    last = m.clientY
-    emit('knob', i, value)
-  }
-  const up = () => {
-    el.removeEventListener('pointermove', move)
-    el.removeEventListener('pointerup', up)
-  }
-  el.addEventListener('pointermove', move)
-  el.addEventListener('pointerup', up)
+// Knob drag: up is more, 150 px for the full turn. The knob holds the
+// pointer, so the drag ends however the pointer goes (up, cancelled, lost).
+let turning: { knob: number; value: number; y: number } | null = null
+
+function grab(i: number, e: PointerEvent) {
+  ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  turning = { knob: i, value: props.knobs[i].value, y: e.clientY }
 }
+
+function turn(e: PointerEvent) {
+  if (!turning) return
+  turning.value = Math.min(1, Math.max(0, turning.value + (turning.y - e.clientY) / 150))
+  turning.y = e.clientY
+  emit('knob', turning.knob, turning.value)
+}
+
+const letGo = () => (turning = null)
 
 // A knob's arc: 270°, clockwise from bottom-left.
 function arc(value: number) {
@@ -108,7 +107,7 @@ function releasePad(note: number) {
           v-for="p in pads"
           :key="p.note"
           class="mpk-pad"
-          :class="{ down: padDown(p.note), dashed: p.dashed }"
+          :class="{ down: padsDown.has(p.note), dashed: p.dashed }"
           @pointerdown="pressPad(p.note)"
           @pointerup="releasePad(p.note)"
           @pointerleave="releasePad(p.note)"
@@ -124,7 +123,9 @@ function releasePad(note: number) {
           :key="i"
           class="mpk-knob"
           :class="{ accent: k.accent }"
-          @pointerdown="drag(i, $event)"
+          @pointerdown="grab(i, $event)"
+          @pointermove="turn"
+          @lostpointercapture="letGo"
         >
           <svg viewBox="0 0 40 40">
             <path class="track" :d="arc(1)" />
@@ -141,7 +142,7 @@ function releasePad(note: number) {
       <Keyboard
         :from="from"
         :count="25"
-        :is-down="keyDown"
+        :down="keysDown"
         @press="(n, v) => emit('press', n, v)"
         @release="(n) => emit('release', n)"
       />
@@ -208,7 +209,7 @@ function releasePad(note: number) {
   position: absolute;
   width: 1rem;
   height: 1rem;
-  transform: translate(-50%, -50%);
+  translate: -50% -50%;
   border-radius: 50%;
   background: var(--ink);
   transition: left 0.03s, top 0.03s;

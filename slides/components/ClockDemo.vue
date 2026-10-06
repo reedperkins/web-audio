@@ -74,10 +74,7 @@ function stopPlayhead() {
 .clock-controls .length {
   gap: 0.4em;
   font-size: 0.8rem;
-}
-
-.clock-controls .length :deep(input) {
-  width: 5rem;
+  --slider-width: 5rem;
 }
 
 .clock-controls {

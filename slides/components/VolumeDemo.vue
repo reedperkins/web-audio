@@ -148,6 +148,7 @@ watch(lfoOn, (on) => {
 .volume-demo .gain {
   gap: 0.4em;
   font-size: 0.8rem;
+  --slider-width: 5rem;
 }
 
 .volume-demo .lfo-node {
@@ -179,9 +180,5 @@ watch(lfoOn, (on) => {
   font-size: var(--size-small);
   font-weight: 600;
   color: var(--ink);
-}
-
-.volume-demo .gain :deep(input) {
-  width: 5rem;
 }
 </style>

@@ -5,19 +5,20 @@ import { isBlack } from '../audio/input'
 // `count` piano keys starting at MIDI note `from`, each labeled with its
 // number. Emits `press` with a velocity (harder lower on the key) and
 // `release`; dragging across keys plays each one in turn. The parent says
-// which notes are down, and can outline some keys (`marked`). The optional
+// which notes are down (`down`: anything with `has(note)`, like the input's
+// `held` map or a Set), and can outline some keys (`marked`). The optional
 // `below` slot puts something under each white key (`{ note }`).
 // Fills its box: size it from the parent.
 const props = withDefaults(defineProps<{
   from?: number
   count?: number
   marked?: number[]
-  isDown?: (note: number) => boolean
+  down?: { has(note: number): boolean }
 }>(), {
   from: 48,
   count: 25,
   marked: () => [],
-  isDown: () => false,
+  down: () => new Set<number>(),
 })
 const emit = defineEmits<{ press: [note: number, velocity: number], release: [note: number] }>()
 
@@ -40,10 +41,11 @@ function keyAt(e: PointerEvent) {
   return { note: Number(el.dataset.note), velocity: Math.round(MIN_VELOCITY + (127 - MIN_VELOCITY) * depth) }
 }
 
-function down(e: PointerEvent) {
+function onPointerDown(e: PointerEvent) {
   e.preventDefault()
   // Let the pointer move on to other keys (a capture would pin it to this one).
-  ;(e.target as HTMLElement).releasePointerCapture?.(e.pointerId)
+  const el = e.target as HTMLElement
+  if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId)
   const key = keyAt(e)
   if (key) hold(e.pointerId, key)
 }
@@ -78,7 +80,7 @@ defineExpose({ upAll })
   <div class="keyboard" :style="{ '--whites': whites.length }">
     <div
       class="keys"
-      @pointerdown="down"
+      @pointerdown="onPointerDown"
       @pointermove="move"
       @pointerup="up($event.pointerId)"
       @pointercancel="up($event.pointerId)"
@@ -88,7 +90,7 @@ defineExpose({ upAll })
         v-for="note in whites"
         :key="note"
         class="key white"
-        :class="{ down: isDown(note), marked: marked.includes(note) }"
+        :class="{ down: down.has(note), marked: marked.includes(note) }"
         :data-note="note"
       >
         <span class="num">{{ note }}</span>
@@ -97,7 +99,7 @@ defineExpose({ upAll })
         v-for="key in blacks"
         :key="key.note"
         class="key black"
-        :class="{ down: isDown(key.note), marked: marked.includes(key.note) }"
+        :class="{ down: down.has(key.note), marked: marked.includes(key.note) }"
         :data-note="key.note"
         :style="{ '--after': key.after }"
       />
@@ -147,7 +149,7 @@ defineExpose({ upAll })
   left: calc(100% / var(--whites) * var(--after));
   width: calc(100% / var(--whites) * 0.6);
   height: 60%;
-  transform: translateX(-50%);
+  translate: -50%;
   border-radius: 0 0 3px 3px;
   background: var(--ink);
 }
