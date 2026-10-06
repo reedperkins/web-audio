@@ -1,0 +1,26 @@
+/*
+ * Theme tokens. Nothing else in the deck defines colors or fonts.
+ *
+ * PLACEHOLDER(refine): palette, fonts and type sizes. System fonts, grays plus
+ * one accent until a direction from wireframes/ is picked. Add woff2 files to
+ * fonts/ and @font-face rules here when the fonts are chosen.
+ */
+:root {
+  --bg: #fafaf8;
+  --surface: #eeeeea;
+  --ink: #1c1c1a;
+  --muted: #6b6b66;
+  --accent: #d9480f;
+  --signal: #2b8a3e;
+  --wire: #9a9a94;
+
+  --font-display: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --size-display: 4rem;
+  --size-title: 2.5rem;
+  --size-body: 1.5rem;
+  --size-small: 1.1rem;
+  --size-code: 1.15rem;
+}

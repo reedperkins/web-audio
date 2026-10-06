@@ -1,0 +1,52 @@
+/* Slidev loads this file automatically. Maps the theme tokens onto Slidev. */
+@import './theme/theme.css';
+
+:root {
+  --slidev-theme-primary: var(--accent);
+  --slidev-code-background: var(--surface);
+  --slidev-code-foreground: var(--ink);
+  --slidev-code-font-family: var(--font-mono);
+  --slidev-code-font-size: var(--size-code);
+  --slidev-code-line-height: 1.6;
+  --slidev-code-padding: 1rem 1.25rem;
+  --slidev-slide-container-background: var(--bg);
+}
+
+.slidev-page,
+.slidev-layout {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+}
+
+.slidev-layout {
+  font-size: var(--size-body);
+}
+
+.slidev-layout h1,
+.slidev-layout h2 {
+  font-family: var(--font-display);
+  color: var(--ink);
+}
+
+.slidev-layout h1 {
+  font-size: var(--size-title);
+  font-weight: 700;
+}
+
+.slidev-layout a {
+  color: var(--accent);
+}
+
+.slidev-layout table {
+  font-size: var(--size-small);
+}
+
+.slidev-layout th {
+  color: var(--muted);
+}
+
+.slidev-layout td,
+.slidev-layout th {
+  border-color: var(--wire);
+}

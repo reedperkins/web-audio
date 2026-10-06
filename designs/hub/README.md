@@ -1,6 +1,6 @@
 # Hub mockups
 
-Design reference for the hub, the demo app's home page (`demos/`, route `#/`).
+Design reference for the hub, the finale slide of the deck.
 Open `hub-mockups.excalidraw` in [excalidraw.com](https://excalidraw.com)
 (File → Open) to see every frame.
 
@@ -21,7 +21,7 @@ Open `hub-mockups.excalidraw` in [excalidraw.com](https://excalidraw.com)
 - **No fog:** every node, icon and wire is drawn in ink, solid, from the start,
   as in frame H.
 - **Hover:** the node under the cursor and its wires are highlighted.
-- **Click:** a node opens its demo route.
+- **Click (optional):** a node jumps to its section in the deck.
 - **"?" nodes:** drawn dashed, so they read as "not built today."
 - **Icons:** each node has a hand-drawn icon plus a label: keyboard keys, sine,
   ADSR outline, fader, speaker cone, mic, scope trace. The Scope icon still

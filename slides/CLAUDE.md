@@ -1,7 +1,7 @@
 # Slides (Slidev deck)
 
-The talk's slide deck. Tasks are in `workbench/SLIDES_PLAN.md`; content is in
-`workbench/TALK_PLAN.md`.
+The talk's slide deck, including the audio engine and every demo. Tasks are in
+`workbench/SLIDES_PLAN.md`; content is in `workbench/TALK_PLAN.md`.
 
 ## Check the docs
 
@@ -12,21 +12,31 @@ to check a slide visually. Check https://sli.dev for features and config.
 ## Layout
 
 - `slides.md`: headmatter plus one `src:` import per section in `pages/`
-- `layouts/`, `components/`, `public/`: Slidev conventions
+- `audio/`: the engine (`audio.ts`, `useDemo.ts`) and plain audio modules
+  (envelope, synth, `mtof`, input, sequencer, presets). No Vue components.
+- `components/`: building blocks with no audio inside (`PlayButton`, `Scope`,
+  `AdsrEditor`, …) and one demo component per slide (`BeepDemo`, `ClockDemo`, …)
+- `layouts/`, `public/`, `setup/`, `theme/`: Slidev conventions
 
 ## Rules
 
-- No audio code in the deck. Demos live in `demos/`; link to them with
-  `<DemoLink to="route">`.
-- Slide code is inline in fenced code blocks, written to teach. Keep it short and
-  plain, but correct: it must run as shown when pasted into the demo app's dev
-  console, where `ctx` and `master` exist.
-- Never let a link or control keep focus. Slidev turns off its shortcuts while an
-  `<a>`, `<button>` or `<input>` has focus.
+- One `AudioContext` for the whole deck, from `audio/audio.ts`. Never create
+  another.
+- Every demo uses `useDemo()`: start in `enter`, clean up in `leave`. These run
+  on slide enter/leave, not mount/unmount: Slidev mounts slides early and keeps
+  them mounted. Never make sound or start timers on mount.
+- Demos connect to `useDemo()`'s `out`, never to `master` or `ctx.destination`
+  directly, so sound stops on leave and the analyser sees it.
+- Keep audio nodes out of deep reactivity (`shallowRef` / `markRaw`).
+- Slide code is inline in fenced code blocks, written to teach. The demo on the
+  slide runs the same code; the only allowed difference is connecting to `out`
+  instead of `ctx.destination`.
+- Never let a link or control keep focus (use `noFocus`). Slidev turns off its
+  shortcuts while an `<a>`, `<button>` or `<input>` has focus.
 - Step-driven behavior depends on the current step number, never on each click.
-- Colors and fonts come only from the tokens in `theme/`. `theme/` is a copy of
-  `demos/src/theme/`; change both together (`diff -r theme ../demos/src/theme`
-  should print nothing). Code highlighting is set in the Shiki config.
+- Colors and fonts come only from the tokens in `theme/`. Canvas code reads
+  them with `getComputedStyle`; SVG uses `currentColor`. Code highlighting is
+  set in the Shiki config.
 
 ## Commands
 
