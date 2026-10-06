@@ -53,6 +53,8 @@ Status: DRAFT. `TODO` marks places where I need to decide something.
 | 6 | Grains in code | — | — | the `grain()` code with step notes |
 | 6 | Sample pads | `PadsDemo` | regions copied onto pads, played from clicks, MIDI or the on-screen keys | the source waveform with selection markers, and the pads |
 | 7 | What's next ×3 | `ClipButton` | a short clip from `public/` | statement slide plus a play button |
+| 7 | One knob, a thousand oscillators | — | — | the swarm code, stepped |
+| 7 | Chaos | `ChaosDemo` | keys play a detuned saw swarm (one `ConstantSourceNode` drives every oscillator's detune) or, toggled from a pad, a granular cloud of the take at the key's pitch; pads mangle the latest recording as grains; K1–K8 and the joystick bend it all, through a crusher and a limiter | oscillator count, scope, and `MpkMini` mirroring the controller |
 | 8 | Let's play it | `HubDemo` | the shared synth | the hub (see below) |
 
 ---
@@ -412,6 +414,7 @@ Placeholders to refine with Reed, not by an agent alone. `grep -rn "PLACEHOLDER(
 - [ ] Audio clips: "what's next" clips, backup mic clip
 - [ ] Closing URL and QR code
 - [ ] Sample pads: pad look and layout, hit level
+- [ ] Chaos slide: levels, knob ranges and start positions, grain limits, layout, MPK mini look
 
 ---
 

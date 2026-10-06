@@ -35,9 +35,10 @@ export function clearMessages() {
 // Notes that are down right now, and which source pressed them.
 export const held = reactive(new Map<number, string>())
 
+// `channel` is 1–16. Keyboards play on 1; drum pads often send on 10.
 export interface NoteListener {
-  noteOn: (note: number, velocity: number) => void
-  noteOff: (note: number) => void
+  noteOn: (note: number, velocity: number, channel: number) => void
+  noteOff: (note: number, channel: number) => void
 }
 const listeners = new Set<NoteListener>()
 export function onNote(listener: NoteListener) {
@@ -45,8 +46,22 @@ export function onNote(listener: NoteListener) {
   return () => listeners.delete(listener)
 }
 
+// Knobs (control change, value 0–127) and the pitch bend wheel or joystick
+// (-1 to 1, 0 at rest).
+export interface ControlListener {
+  control?: (controller: number, value: number, channel: number) => void
+  bend?: (amount: number, channel: number) => void
+}
+const controlListeners = new Set<ControlListener>()
+export function onControl(listener: ControlListener) {
+  controlListeners.add(listener)
+  return () => controlListeners.delete(listener)
+}
+
 const NOTE_ON = 0x90
 const NOTE_OFF = 0x80
+const CONTROL_CHANGE = 0xb0
+const PITCH_BEND = 0xe0
 // Clock, active sensing and other real-time bytes. Some keyboards send them
 // many times a second; they'd bury the notes in the log.
 const REALTIME = 0xf8
@@ -60,13 +75,20 @@ export function receive(bytes: ArrayLike<number>, source: string) {
   messages.value = [{ id: nextId++, source, data }, ...messages.value].slice(0, LOG_SIZE)
 
   const type = status & 0xf0
+  const channel = (status & 0x0f) + 1
   // Many keyboards send "note on, velocity 0" instead of a note off.
   if (type === NOTE_ON && velocity > 0) {
     held.set(note, source)
-    listeners.forEach((l) => l.noteOn(note, velocity))
+    listeners.forEach((l) => l.noteOn(note, velocity, channel))
   } else if (type === NOTE_OFF || type === NOTE_ON) {
     held.delete(note)
-    listeners.forEach((l) => l.noteOff(note))
+    listeners.forEach((l) => l.noteOff(note, channel))
+  } else if (type === CONTROL_CHANGE) {
+    controlListeners.forEach((l) => l.control?.(note, velocity, channel))
+  } else if (type === PITCH_BEND) {
+    // Two 7-bit bytes, low first: 0–16383, with 8192 at rest.
+    const amount = Math.max(-1, ((velocity << 7) + note - 8192) / 8191)
+    controlListeners.forEach((l) => l.bend?.(amount, channel))
   }
 }
 
@@ -120,3 +142,11 @@ const NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A�
 // 60 → "C4" (middle C).
 export const noteName = (note: number) => `${NAMES[note % 12]}${Math.floor(note / 12) - 1}`
 export const isBlack = (note: number) => NAMES[note % 12].length > 1
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __talkInput: { receive: typeof receive } | undefined
+}
+
+// For sending fake MIDI in dev checks; never in the build.
+if (import.meta.env.DEV) globalThis.__talkInput = { receive }
