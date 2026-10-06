@@ -233,6 +233,7 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 - **Done when:** with no device, the indicator says so and nothing errors; a simulated message (call the handler directly) plays a note (signal check); the on-screen keyboard plays notes and passes the navigation check.
 - **Listen for (with the real keyboard):** no noticeable delay; plugging in mid-talk works.
 - **Commit:** "Add MIDI and on-screen keyboard input"
+- **Status:** built ahead of 3.5: `audio/input.ts` (`receive`, velocity-0 note-offs, hot-plugging, held notes, `onNote` listeners for the synth), `MidiStatus`, `Keyboard`, and `KeyboardDrawer` (a pull tab in `global-top.vue`, shown from the first slide with `keyboard: true` in its frontmatter; while open it counts as a connected input, and closing it releases its notes). Left: the synth subscribing with `onNote`, then the signal checks.
 
 ### [ ] 3.8 Section 5: Keyboard demos
 - **Depends on:** 3.6, 3.7
@@ -241,6 +242,7 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 - **Done when:** screenshots after simulated notes show each picture updating; the scope shows four clearly different shapes in 5d.
 - **Listen for:** the Zelda preset sounds recognizably "8-bit."
 - **Commit:** "Add keyboard demos"
+- **Status:** 5a `MidiLog` built (status line plus a table of the last message: bits, decimal and meaning per byte). 5b has `PitchGraph` (the `mtof` curve, notes 33–93, dots on each A so the labels double exactly (110 … 1760), live dot for held or hovered notes, Linear / Log switch that animates between the two) beside `OctaveKeys`, which is now the shared `Keyboard` (A3–A4, held notes light up, playable). `audio/mtof.ts` exists.
 
 ### [ ] 3.9 Section 8: Hub and close
 - **Depends on:** 3.7

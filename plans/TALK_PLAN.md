@@ -181,7 +181,7 @@ Code on slides is written to teach: short and plain, no imports, cleanup or erro
 
 All of these play the shared synth.
 
-- **5a MIDI comes in (`MidiLog`):** play the MIDI keyboard and show the raw messages on screen as they arrive, e.g. `[144, 60, 100]`, with the three bytes labeled.
+- **5a MIDI comes in (`MidiLog`):** play the MIDI keyboard and show the last message on screen as it arrives, e.g. `[144, 60, 100]`: a table with each byte's bits, decimal value and meaning, under a "device connected" status line.
   ```js
   const midi = await navigator.requestMIDIAccess()
   midi.inputs.forEach((input) => {
@@ -189,7 +189,7 @@ All of these play the shared synth.
   })
   ```
   - **Say:** "Every key is just a number. Middle C is 60."
-- **5b Numbers → pitch (`OctaveDemo`):** the `mtof` one-liner. The 12-key picture lights the pressed key and shows its frequency.
+- **5b Numbers → pitch (`OctaveKeys` + `PitchGraph`):** the `mtof` one-liner. The octave picture (A3–A4, 220 → 440 Hz) lights the pressed key; beside it, the `mtof` curve shows the pressed note's frequency, with a Linear / Log switch that straightens the curve into a line.
   ```js
   const mtof = (note) => 440 * 2 ** ((note - 69) / 12)
   ```

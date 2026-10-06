@@ -1,5 +1,6 @@
 ---
 layout: code
+keyboard: true
 ---
 
 # MIDI comes in
@@ -17,6 +18,10 @@ midi.inputs.forEach((input) => {
 <StepNote :at="1">Log every message from every input.</StepNote>
 <StepNote :at="2"><code>[144, 60, 100]</code>: note on, key 60, this hard. Every key is just a number. Middle C is 60.</StepNote>
 
+::demo::
+
+<MidiLog />
+
 ---
 layout: code
 ---
@@ -27,13 +32,22 @@ layout: code
 const mtof = (note) => 440 * 2 ** ((note - 69) / 12)
 ```
 
-<OctaveKeys class="octave" />
+<div class="pitch-row">
+  <OctaveKeys class="octave" />
+  <PitchGraph class="graph" />
+</div>
 
 <style>
-.octave {
-  width: 70%;
-  margin: 2rem auto 0;
-  display: block;
+.pitch-row {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  align-items: center;
+  gap: 2.5rem;
+  margin-top: 1.5rem;
+}
+.pitch-row > * {
+  min-width: 0;
+  width: 100%;
 }
 </style>
 
