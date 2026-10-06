@@ -38,7 +38,7 @@ Status: DRAFT. `TODO` marks places where I need to decide something.
 | 2 | One beep | `BeepDemo` | one oscillator for 1 s | play button under the code |
 | 2 | The audio clock | `ClockDemo` | four scheduled oscillators | timeline of the note start times, playhead following `ctx.currentTime` |
 | 3 | Too loud | `ClipDemo` | four oscillators, no gain | four sines, their sum crossing ±1, and the clipped flat tops (drawn from the math) |
-| 3 | Turn it down / AudioParams | `VolumeDemo` | oscillators → `GainNode` → out | signal chain osc → gain → out, with play button and a volume slider on the gain node (`setTargetAtTime`) |
+| 3 | Turn it down / AudioParams | `VolumeDemo` | oscillators → `GainNode` → out; on the LFO step a 2 Hz sine (× 0.05) into `gain` | signal chain osc → gain → out, with play button and a volume slider on the gain node (`setTargetAtTime`); on the LFO step an LFO node with an on/off checkbox above the gain node, and the slider follows the live gain |
 | 4 | Click. | `ClickDemo` | an instant start/stop, and the same tone with a short ramp | zoomed waveform of the first few ms: a cliff vs. a ramp |
 | 4 | Shape over time | `AdsrDemo` | plays a note when a handle or preset card is let go; hold the button or Enter to play | drag-and-drop ADSR editor with a playhead, plus a row of preset cards (A/D/S/R as bars); edits the shared synth's envelope |
 | 4 | Scheduled gain | `AdsrDemo` (small) | play button | ADSR curve highlighting the segment that matches the current step |
@@ -147,6 +147,16 @@ Code on slides is written to teach: short and plain, no imports, cleanup or erro
   ```
 - **3c A knob (`VolumeDemo`):** the same demo; the slider uses `setTargetAtTime`, so it moves smoothly without clicks.
   - **Say:** "Settings like `gain` aren't plain numbers. They're `AudioParam`s, which you can schedule and smooth over time."
+- **3d An LFO (`VolumeDemo`, last step of the 3c slide):** the code morphs into a 2 Hz sine through a `GainNode` at 0.05, connected into `volume.gain`, with `setVolume(0.15)` setting the base. The gain swings between 0.1 and 0.2. An LFO node with a checkbox appears above the gain node, and the slider moves with the live gain.
+  ```js
+  const lfo = new OscillatorNode(ctx)
+  lfo.frequency.value = 2
+  const depth = new GainNode(ctx, { gain: 0.05 })
+  setVolume(0.15)
+  lfo.connect(depth).connect(volume.gain)
+  lfo.start()
+  ```
+  - **Say:** "Connect a node into an `AudioParam` and its signal adds to the value. A slow sine wave turns the knob for you."
 - **Note:** the master volume stays at 1.0 so the clipping is real. Loudness is set on the laptop or PA.
 
 ### 4. Envelope (about 3.5 min)

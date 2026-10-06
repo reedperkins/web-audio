@@ -69,6 +69,7 @@ layout: code
 
 # Settings are AudioParams
 
+````md magic-move {lines: true}
 ```js {1|2-5|3-4}
 // A slider calls this as it moves
 function setVolume(value) {
@@ -77,12 +78,24 @@ function setVolume(value) {
 }
 ```
 
+```js
+// An LFO: a slow sine wave turns the knob
+const lfo = new OscillatorNode(ctx)
+lfo.frequency.value = 2
+const depth = new GainNode(ctx, { gain: 0.05 })
+setVolume(0.15)
+lfo.connect(depth).connect(volume.gain)
+lfo.start()
+```
+````
+
 ::aside::
 
 <StepNote :at="0"><code>gain</code> isn't a plain number. It's an <code>AudioParam</code>.</StepNote>
 <StepNote :at="1">You can schedule an <code>AudioParam</code> and smooth it over time.</StepNote>
 <StepNote :at="2">Glide toward the new value, starting now. No jumps, no clicks.</StepNote>
+<StepNote :at="3">A node connected to an <code>AudioParam</code> adds to its value: 0.15 ± 0.05.</StepNote>
 
 ::demo::
 
-<VolumeDemo hold />
+<VolumeDemo hold :lfo-at="3" />
