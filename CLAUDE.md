@@ -24,14 +24,13 @@ Check the current docs before writing or changing code. Don't rely on memory.
 
 - `slides/`: the deck, with its own `package.json`
 - `designs/`: design references (e.g. `designs/hub/` for the hub)
-- `workbench/` is gitignored and holds the plans. Search tools may skip it, so
-  open these files by path:
-  - `workbench/TALK_PLAN.md`: what each section says, shows and plays, and how
+- `plans/`: the plans
+  - `plans/TALK_PLAN.md`: what each section says, shows and plays, and how
     agents work through the plan
-  - `workbench/SLIDES_PLAN.md`: the task list
-  - `workbench/archive/`: old plans, for reference only
-
-  Never commit or copy anything from `workbench/` into the deck.
+  - `plans/SLIDES_PLAN.md`: the task list
+- `workbench/` is gitignored: lessons, outlines, wireframes, and old plans in
+  `workbench/archive/` (reference only). Search tools may skip it, so open
+  these files by path. Never commit or copy anything from it into the deck.
 
 ## Commands
 

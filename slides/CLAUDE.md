@@ -1,7 +1,7 @@
 # Slides (Slidev deck)
 
 The talk's slide deck, including the audio engine and every demo. Tasks are in
-`workbench/SLIDES_PLAN.md`; content is in `workbench/TALK_PLAN.md`.
+`plans/SLIDES_PLAN.md`; content is in `plans/TALK_PLAN.md`.
 
 ## Check the docs
 
