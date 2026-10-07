@@ -60,27 +60,19 @@ export const songs: Song[] = [
     `),
   },
   {
-    name: 'Für Elise',
-    wave: 'triangle',
-    env: { attack: 0.005, decay: 0.4, sustain: 0, release: 0.3 },
-    bpm: 70,
-    steps: melody(`
-      E5:.25 D#5:.25 E5:.25 D#5:.25 E5:.25 B4:.25 D5:.25 C5:.25 A4:.75
-      C4:.25 E4:.25 A4:.25 B4:.75 E4:.25 G#4:.25 B4:.25 C5:.75
-      E4:.25 E5:.25 D#5:.25 E5:.25 D#5:.25 E5:.25 B4:.25 D5:.25 C5:.25 A4:.75
-      C4:.25 E4:.25 A4:.25 B4:.75 E4:.25 C5:.25 B4:.25 A4:1.5
-    `),
-  },
-  {
-    name: 'Ode to Joy',
+    // Hedwig's Theme. A sine with a fast decay and little sustain rings like
+    // the celesta it's played on.
+    name: 'Harry Potter',
     wave: 'sine',
-    env: { attack: 0.06, decay: 0.2, sustain: 0.8, release: 0.4 },
-    bpm: 120,
+    env: { attack: 0.005, decay: 0.6, sustain: 0.2, release: 0.5 },
+    bpm: 160,
     steps: melody(`
-      E5:1 E5:1 F5:1 G5:1 G5:1 F5:1 E5:1 D5:1
-      C5:1 C5:1 D5:1 E5:1 E5:1.5 D5:.5 D5:2
-      E5:1 E5:1 F5:1 G5:1 G5:1 F5:1 E5:1 D5:1
-      C5:1 C5:1 D5:1 E5:1 D5:1.5 C5:.5 C5:2
+      B4:1
+      E5:1.5 G5:.5 F#5:1 E5:2 B5:1 A5:3 F#5:3
+      E5:1.5 G5:.5 F#5:1 D#5:2 F5:1 B4:5
+      B4:1
+      E5:1.5 G5:.5 F#5:1 E5:2 B5:1 D6:2 C#6:1 C6:2 G#5:1
+      C6:1.5 B5:.5 A#5:1 A#4:2 G5:1 E5:5
     `),
   },
 ]

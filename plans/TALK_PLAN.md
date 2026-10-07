@@ -217,7 +217,7 @@ All of these play the shared synth.
   function noteOff(note) { voices.get(note)?.release(); voices.delete(note) }
   ```
 - **5d Wave types (`WaveDemo`):** sine, square, sawtooth, triangle. The synth drawn as its graph: the wave pictures pick the synth's wave, the ADSR editor sets the envelope, and a live scope shows the real shape.
-  Songs on the same slide set the wave and envelope, then loop a melody through the sequencer: Zelda (square), Mountain King (sawtooth), Für Elise (triangle), Ode to Joy (sine). Changes while a song plays are heard on the next notes.
+  Songs on the same slide set the wave and envelope, then loop a melody through the sequencer: Zelda (square), Mountain King (sawtooth), Harry Potter (sine). Changes while a song plays are heard on the next notes.
 
 - **Risk:** the MIDI device or permission fails → open the on-screen keyboard and keep going.
 
