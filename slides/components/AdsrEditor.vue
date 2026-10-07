@@ -52,15 +52,24 @@ const handles = computed(() => {
   ]
 })
 
+// Labels closer than this would overlap their values ("300 ms" is ~54 wide).
+const LABEL_GAP = 64
+
 const labels = computed(() => {
   const { xA, xD, xS, xR } = pts.value
   const { attack, decay, sustain, release } = model.value
-  return [
-    { key: 'attack', x: (X0 + xA) / 2, letter: 'A', value: duration(attack) },
-    { key: 'decay', x: (xA + xD) / 2, letter: 'D', value: duration(decay) },
+  // Each label sits under its handle (sustain's is the middle of its line).
+  const placed = [
+    { key: 'attack', x: xA, letter: 'A', value: duration(attack) },
+    { key: 'decay', x: xD, letter: 'D', value: duration(decay) },
     { key: 'sustain', x: (xD + xS) / 2, letter: 'S', value: sustain.toFixed(2) },
-    { key: 'release', x: (xS + xR) / 2, letter: 'R', value: duration(release) },
+    { key: 'release', x: xR, letter: 'R', value: duration(release) },
   ]
+  // Short segments bunch the labels up; push each clear of the one before.
+  for (let i = 1; i < placed.length; i++) {
+    placed[i].x = Math.max(placed[i].x, placed[i - 1].x + LABEL_GAP)
+  }
+  return placed
 })
 
 const playheadPoint = computed(() => {
@@ -117,7 +126,7 @@ function drop() {
     ref="svg"
     class="adsr-editor"
     :class="{ dragging, compact }"
-    viewBox="0 0 1000 310"
+    viewBox="0 0 1000 320"
     role="img"
     aria-label="Envelope editor: attack, decay, sustain, release"
     @pointermove="move"
@@ -136,8 +145,8 @@ function drop() {
     <path :d="path" class="trace" />
 
     <g v-for="label in labels" :key="label.key" class="label" :class="{ active: playheadPoint?.phase === label.key }">
-      <text :x="label.x" :y="BASE + 32" class="letter">{{ label.letter }}</text>
-      <text v-if="!compact" :x="label.x" :y="BASE + 54" class="value">{{ label.value }}</text>
+      <text :x="label.x" :y="BASE + (compact ? 54 : 42)" class="letter">{{ label.letter }}</text>
+      <text v-if="!compact" :x="label.x" :y="BASE + 64" class="value">{{ label.value }}</text>
     </g>
 
     <g v-if="playheadPoint" class="playhead">
