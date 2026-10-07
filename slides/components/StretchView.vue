@@ -40,8 +40,10 @@ const speed = defineModel<number>('speed', { required: true })
 // PLACEHOLDER(refine): stretch view look
 // Lane edges, as shares of the height: output on top, original below. The
 // overlays get the same edges through v-bind() in the styles.
-const OUT = [0.1, 0.42]
-const IN = [0.62, 0.94]
+// The strip above the top lane holds the layout and zoom controls.
+const TOOLBAR = 0.17
+const OUT = [TOOLBAR, 0.46]
+const IN = [0.64, 0.94]
 const lanes = {
   out: { top: `${OUT[0] * 100}%`, height: `${(OUT[1] - OUT[0]) * 100}%` },
   in: { top: `${IN[0] * 100}%`, height: `${(IN[1] - IN[0]) * 100}%` },
@@ -288,8 +290,8 @@ function drawStacked(
   const count = Math.ceil(outDur.value / hop)
   const kTop = Math.max(0, Math.round(stackStart.value / readHop))
   const pad = 8 * scale
-  const top = H * 0.12
-  const rowH = (H * 0.86) / ROWS
+  const top = H * TOOLBAR
+  const rowH = (H * (0.98 - TOOLBAR)) / ROWS
   const secs = Math.max((ROWS - 1) * hop + GRAIN, (ROWS - 1) * readHop + readSpan) * 1.02
   const x = (t: number) => pad + (t / secs) * (W - 2 * pad)
   const lit = new Map((props.grains ?? []).map((gr) => [Math.round(gr.offset / readHop), gr.opacity]))
@@ -632,8 +634,8 @@ onUnmounted(() => resize.disconnect())
 }
 
 .label.all {
-  top: 10%;
-  height: 86%;
+  top: 17%;
+  height: 81%;
   justify-content: flex-start;
   padding-top: 0.5rem;
 }
@@ -741,7 +743,7 @@ canvas {
 
 .zooms {
   position: absolute;
-  top: 0.15rem;
+  top: 0.4rem;
   left: 0.5rem;
   display: flex;
   gap: 0.25rem;
@@ -753,7 +755,7 @@ canvas {
 }
 
 .zooms .gap {
-  margin-left: 0.4rem;
+  margin-left: 0.9rem;
 }
 
 .zoom-chips {
@@ -763,7 +765,7 @@ canvas {
 .hint {
   position: absolute;
   right: 0.5rem;
-  top: 0;
+  top: 0.4rem;
   color: var(--muted);
   font-family: var(--font-body);
   font-size: 0.6rem;
