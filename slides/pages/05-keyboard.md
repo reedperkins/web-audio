@@ -5,18 +5,12 @@ keyboard: true
 
 # MIDI comes in
 
-```js {1|2-4|all}
+```js
 const midi = await navigator.requestMIDIAccess()
 midi.inputs.forEach((input) => {
   input.onmidimessage = (e) => console.log(e.data)
 })
 ```
-
-::aside::
-
-<StepNote :at="0">Ask the browser for MIDI devices.</StepNote>
-<StepNote :at="1">Log every message from every input.</StepNote>
-<StepNote :at="2"><code>[144, 60, 100]</code>: note on, key 60, this hard. Every key is just a number. Middle C is 60.</StepNote>
 
 ::demo::
 
@@ -57,7 +51,7 @@ layout: code
 
 # One voice per key
 
-```js {2-4|5-6|8-12|all}
+```js
 class Voice {
   constructor(frequency) {
     this.osc = new OscillatorNode(ctx, { frequency })
@@ -74,20 +68,13 @@ class Voice {
 }
 ```
 
-::aside::
-
-<StepNote :at="0">A voice is an oscillator plus its own envelope.</StepNote>
-<StepNote :at="1">Wire it up and start the envelope.</StepNote>
-<StepNote :at="2">On release, fade out, then stop the oscillator.</StepNote>
-<StepNote :at="3">The <code>noteOn</code> and <code>noteOff</code> from the envelope slide.</StepNote>
-
 ---
 layout: code
 ---
 
 # Polyphony
 
-```js {1|2-4|5-8|all}
+```js
 const voices = new Map()
 function keyDown(note) {
   voices.set(note, new Voice(mtof(note)))
@@ -100,10 +87,6 @@ function keyUp(note) {
 
 ::aside::
 
-<StepNote :at="0">One voice for each key that's down.</StepNote>
-<StepNote :at="1">Key down: a new voice at that key's pitch.</StepNote>
-<StepNote :at="2">Key up: release it and forget it.</StepNote>
-<StepNote :at="3">Press three keys, get three voices: a chord.</StepNote>
 <VoiceList />
 
 ::demo::

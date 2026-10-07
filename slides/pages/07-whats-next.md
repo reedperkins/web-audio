@@ -45,7 +45,7 @@ layout: code
 
 # One knob, a thousand oscillators
 
-```js {1-2|4-7|8-9|10|12|17}
+```js
 const spread = new ConstantSourceNode(ctx, { offset: 0 })
 spread.start()
 
@@ -65,18 +65,9 @@ function swarm(note) {
 knob.oninput = () => spread.offset.setTargetAtTime(cents, ctx.currentTime, 0.03)
 ```
 
-::aside::
-
-<StepNote :at="0">A source whose output is one number: its <code>offset</code>.</StepNote>
-<StepNote :at="1">Every key is a swarm: dozens of saws on the same note.</StepNote>
-<StepNote :at="2">Each oscillator's detune listens to <code>spread</code>, scaled by its own random amount.</StepNote>
-<StepNote :at="3">Slow LFOs wobble them out of step.</StepNote>
-<StepNote :at="4">A random start, so in unison they don't stack into one giant saw.</StepNote>
-<StepNote :at="5">Turn one knob: every oscillator moves, at audio rate, no loop.</StepNote>
-
 <style>
 .slidev-layout {
-  --slidev-code-font-size: 0.68rem;
+  --slidev-code-font-size: 0.9rem;
 }
 </style>
 

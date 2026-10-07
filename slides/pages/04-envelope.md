@@ -28,7 +28,7 @@ layout: code
 
 # An envelope is a scheduled gain
 
-```js {1-3|5-11|12-15|all}
+```js
 const env = {
   attack: 0.01, decay: 0.3, sustain: 0.5, release: 0.4,
 }
@@ -46,15 +46,7 @@ function noteOff(gain, t) {
 }
 ```
 
-::aside::
-
-<StepNote :at="0">Four numbers: attack, decay, sustain, release.</StepNote>
-<StepNote :at="1">Key down: ramp up to full, then down to the sustain level.</StepNote>
-<StepNote :at="2">Key up: hold wherever we are, then ramp to silence.</StepNote>
-<StepNote :at="3">An envelope is just a <code>GainNode</code> whose volume we schedule.</StepNote>
-
 <style>
-/* Leaves room for the notes column. */
 .slidev-layout {
   --slidev-code-font-size: 1rem;
 }
