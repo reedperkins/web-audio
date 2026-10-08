@@ -2,7 +2,7 @@
 import { computed, ref, shallowRef } from 'vue'
 import { unlock } from '../audio/audio'
 import type { Envelope, EnvelopePosition } from '../audio/envelope'
-import { env, envelopeAt, noteOff, noteOn } from '../audio/envelope'
+import { SUSTAIN_DRAW, env, envelopeAt, noteOff, noteOn } from '../audio/envelope'
 import type { EnvelopePreset } from '../audio/presets'
 import { envelopePresets } from '../audio/presets'
 import { useDemo } from '../audio/useDemo'
@@ -14,6 +14,8 @@ import { useDemo } from '../audio/useDemo'
 const KEY = 'Enter'
 // Long enough to hear the sustain after a handle is let go.
 const PREVIEW_HOLD = 0.35
+// A preset plays its whole drawn shape: the playhead crosses the full sustain.
+const PRESET_HOLD = SUSTAIN_DRAW
 
 interface Voice {
   amp: GainNode
@@ -73,7 +75,7 @@ function tick() {
 
 function pick({ attack, decay, sustain, release }: EnvelopePreset) {
   Object.assign(env, { attack, decay, sustain, release })
-  start(PREVIEW_HOLD)
+  start(PRESET_HOLD)
 }
 
 function press() {

@@ -1,10 +1,4 @@
 ---
-layout: statement
----
-
-# Let's play it
-
----
 # PLACEHOLDER(refine): closing URL, QR code and closing line, until hosting is decided
 ---
 

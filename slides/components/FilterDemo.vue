@@ -37,7 +37,8 @@ const wahStep = computed(() => $clicks.value >= props.wahAt)
 
 const active = ref(false)
 const holding = ref(false)
-const wahEnabled = ref(true)
+// The LFO starts off; its checkbox turns it on.
+const wahEnabled = ref(false)
 
 const nodes = [
   { key: 'osc', label: 'OscillatorNode', style: { width: '11rem' } },

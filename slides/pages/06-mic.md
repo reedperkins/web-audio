@@ -2,7 +2,7 @@
 layout: code
 ---
 
-# A file is a buffer
+# Ok, but what about REAL audio?
 
 ```js
 const response = await fetch('/samples/small-step.mp3')
@@ -22,7 +22,7 @@ source.start()
 layout: code
 ---
 
-# The mic
+# Magic Mic
 
 ```js
 const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -50,7 +50,7 @@ recorder.start() // then recorder.stop()
 layout: code
 ---
 
-# Play it differently
+# Buffer the Vampire Slayer
 
 ```js
 buffer.getChannelData(0).reverse()
@@ -86,6 +86,7 @@ source.start(0, offset)
 }
 </style>
 
+<!-- 
 ---
 layout: code
 ---
@@ -108,21 +109,22 @@ Fade each grain in and out: the clicks go, but now the level pumps.
 
 ::demo::
 
-<StretchDemo stage="fade" />
+<StretchDemo stage="fade" /> 
+-->
 
 ---
 layout: code
 ---
 
-# Overlap the grains
+# Separation of Pitch and Speed
 
-Each fades in as the last fades out, so the level holds. Now pitch is a knob too.
+Granular stretching: play the recording as short, overlapping grains that crossfade. Speed is where each grain reads from; pitch is its detune.
 
 ::demo::
 
 <StretchDemo stage="overlap" />
 
----
+<!-- ---
 layout: code
 ---
 
@@ -138,9 +140,9 @@ function grain(time, offset) {
 }
 
 // every GRAIN / 2: grain(time, pos), then pos += speed * GRAIN / 2
-```
+``` -->
 
----
+<!-- ---
 layout: code
 ---
 
@@ -172,5 +174,49 @@ function noteOn(note) {
 
 .slidev-layout:has(.keys-open) :deep(.code-main > :not(h1)) {
   display: none;
+}
+</style> -->
+
+---
+layout: code
+---
+
+# One knob, a thousand oscillators
+
+```js
+const spread = new ConstantSourceNode(ctx, { offset: 0 })
+spread.start()
+
+function swarm(note) {
+  const amp = new GainNode(ctx, { gain: 1 / Math.sqrt(size) })
+  for (let i = 0; i < size; i++) {
+    const osc = new OscillatorNode(ctx, { type: 'sawtooth', frequency: mtof(note) })
+    const offset = new GainNode(ctx, { gain: Math.random() * 2 - 1 })
+    spread.connect(offset).connect(osc.detune)
+    drift[i % drift.length].connect(osc.detune)
+    osc.connect(amp)
+    osc.start(ctx.currentTime + Math.random() / mtof(note))
+  }
+  amp.connect(ctx.destination)
+}
+
+knob.oninput = () => spread.offset.setTargetAtTime(cents, ctx.currentTime, 0.03)
+```
+
+<style>
+.slidev-layout {
+  --slidev-code-font-size: 0.9rem;
+}
+</style>
+
+---
+
+# Chaos synth
+
+<ChaosDemo />
+
+<style>
+.slidev-layout h1 {
+  margin-bottom: 0.6rem;
 }
 </style>

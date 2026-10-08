@@ -2,9 +2,9 @@
 layout: code
 ---
 
-# Too loud
+# Beward of clipping
 
-```js {1|2-7|all}
+```js {all}
 const chord = [261.63, 329.63, 392, 523.25]
 chord.forEach((frequency) => {
   const osc = new OscillatorNode(ctx, { frequency })
@@ -16,9 +16,7 @@ chord.forEach((frequency) => {
 
 ::aside::
 
-<StepNote :at="0">The same four notes, all at once.</StepNote>
-<StepNote :at="1">Each oscillator swings between −1 and +1: full volume.</StepNote>
-<StepNote :at="2">Add four together and the wave goes past ±1. The speakers clip it: distortion.</StepNote>
+<StepNote :at="0">Each oscillator swings between −1 and +1. Add four together and the wave goes past ±1, but digital audio can't go beyond that, so the signal gets clipped: distortion.</StepNote>
 
 ::demo::
 
@@ -28,7 +26,7 @@ chord.forEach((frequency) => {
 layout: code
 ---
 
-# Turn it down
+# Turn down for what?
 
 ````md magic-move {lines: true}
 ```js
@@ -67,10 +65,10 @@ chord.forEach((frequency) => {
 layout: code
 ---
 
-# Settings are AudioParams
+# Automating parameters
 
 ````md magic-move {lines: true}
-```js {1|2-5|3-4}
+```js {all}
 // A slider calls this as it moves
 function setVolume(value) {
   const now = ctx.currentTime
@@ -98,4 +96,4 @@ lfo.start()
 
 ::demo::
 
-<VolumeDemo hold :lfo-at="3" />
+<VolumeDemo hold :lfo-at="1" />

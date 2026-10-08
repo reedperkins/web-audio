@@ -1,18 +1,10 @@
 ---
-layout: statement
----
-
-# Click.
-
-A tone that starts and stops instantly makes a pop.
-
----
 layout: code
 ---
 
-# Shape over time
+# Scheduling gain automation
 
-A piano and an organ can play the same note. What's different is how the volume changes over time.
+Thinking about instruments in terms of ADSR opens the door for emulation
 
 <AdsrDemo class="adsr" />
 
@@ -26,7 +18,7 @@ A piano and an organ can play the same note. What's different is how the volume 
 layout: code
 ---
 
-# An envelope is a scheduled gain
+# Implementing ADSR
 
 ```js
 const env = {

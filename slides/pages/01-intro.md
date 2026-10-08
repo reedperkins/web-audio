@@ -3,9 +3,9 @@ layout: cover
 # PLACEHOLDER(refine): title slide text and layout
 ---
 
-# Web Audio
+# Web Audio API
 
-Build the machine
+Build your musical dreams!
 
 <div class="byline">Reed Perkins · Utah JS</div>
 

@@ -226,7 +226,8 @@ function releasePad(note: number) {
 }
 
 .mpk-pad {
-  aspect-ratio: 1;
+  /* Shorter than wide, so the keys get the height. */
+  aspect-ratio: 4 / 3;
   display: grid;
   place-items: end center;
   padding: 0.2rem;
@@ -308,7 +309,7 @@ function releasePad(note: number) {
 }
 
 .mpk-keys {
-  height: 4.5rem;
+  height: 6rem;
   --key-label-size: 0.45rem;
 }
 </style>

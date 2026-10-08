@@ -44,7 +44,7 @@ export type Phase = 'attack' | 'decay' | 'sustain' | 'release'
 // through the phase (sustain fills over SUSTAIN_DRAW seconds). Mirrors the
 // ramps noteOn/noteOff schedule (the release is a glide, falling by e^-GLIDE
 // over its time); returns null once the release has finished.
-const SUSTAIN_DRAW = 1.5
+export const SUSTAIN_DRAW = 1.5
 
 export interface EnvelopePosition {
   phase: Phase
