@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import type { Envelope, EnvelopePosition, TimeSegment } from '../audio/envelope'
 import { fractionToTime, GLIDE, timeToFraction } from '../audio/envelope'
 import { duration } from '../lib/format'
@@ -13,9 +13,11 @@ import { duration } from '../lib/format'
 // 1000 wide; compact editors default to COMPACT_WIDTH), for small sizes where
 // the longest releases aren't needed; the editor keeps its height, so it draws
 // bigger in the same width.
+// `center` slides the drawing to the middle of its width; it holds still
+// while a handle is dragged and re-centers when it's let go.
 // `--adsr-color` sets the curve and handle color (default `--accent`).
 const model = defineModel<Envelope>({ required: true })
-const props = defineProps<{ playhead?: EnvelopePosition | null; compact?: boolean; width?: number }>()
+const props = defineProps<{ playhead?: EnvelopePosition | null; compact?: boolean; width?: number; center?: boolean }>()
 // Room for every preset's release, without the empty stretch the longest
 // ones need.
 const COMPACT_WIDTH = 720
@@ -28,6 +30,9 @@ const TOP = 40
 const BASE = 250
 const HOLD = 150
 const WIDTH = { attack: 230, decay: 230, release: 300 }
+// The time axis runs this far past the longest release (2 s), so dragging R
+// never changes its length.
+const TAIL = 20
 
 const toPx = (seg: TimeSegment, t: number) => WIDTH[seg] * timeToFraction(seg, t)
 const toTime = (seg: TimeSegment, px: number) => fractionToTime(seg, px / WIDTH[seg])
@@ -104,9 +109,20 @@ const playheadPoint = computed(() => {
 const svg = ref<SVGSVGElement>()
 const dragging = ref<Handle | null>(null)
 
+const axisEnd = computed(() => pts.value.xS + WIDTH.release + TAIL)
+// The drawing's right end: the axis, or the R label if it was pushed past.
+const right = computed(() => Math.max(axisEnd.value, labels.value[3].x + 40))
+// Frozen during a drag, so the handle stays under the pointer.
+const offset = ref(0)
+watchEffect(() => {
+  if (dragging.value) return
+  offset.value = props.center ? (width.value - X0 - right.value) / 2 : 0
+})
+
 function svgPoint(e: PointerEvent) {
   const m = svg.value!.getScreenCTM()!.inverse()
-  return new DOMPoint(e.clientX, e.clientY).matrixTransform(m)
+  const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m)
+  return { x: p.x - offset.value, y: p.y }
 }
 
 function grab(key: Handle, e: PointerEvent) {
@@ -149,44 +165,46 @@ function drop() {
     @pointerup="drop"
     @pointercancel="drop"
   >
-    <line :x1="X0" :y1="BASE" :x2="width - 10" :y2="BASE" class="axis" />
-    <line :x1="X0" :y1="BASE" :x2="X0" y2="10" class="axis" />
-    <line :x1="pts.xS" y1="20" :x2="pts.xS" :y2="BASE" class="marker" />
-    <template v-if="!compact">
-      <text :x="X0 + 6" y="24" class="note">key down</text>
-      <text :x="pts.xS + 6" y="24" class="note">key up</text>
-    </template>
+    <g class="drawing" :style="{ translate: `${offset}px 0` }">
+      <line :x1="X0" :y1="BASE" :x2="axisEnd" :y2="BASE" class="axis" />
+      <line :x1="X0" :y1="BASE" :x2="X0" y2="10" class="axis" />
+      <line :x1="pts.xS" y1="20" :x2="pts.xS" :y2="BASE" class="marker" />
+      <template v-if="!compact">
+        <text :x="X0 + 6" y="24" class="note">key down</text>
+        <text :x="pts.xS + 6" y="24" class="note">key up</text>
+      </template>
 
-    <path :d="`${path} Z`" class="area" />
-    <path :d="path" class="trace" />
+      <path :d="`${path} Z`" class="area" />
+      <path :d="path" class="trace" />
 
-    <g v-for="label in labels" :key="label.key" class="label" :class="{ active: playheadPoint?.phase === label.key }">
-      <text :x="label.x" :y="BASE + (compact ? 54 : 42)" class="letter">{{ label.letter }}</text>
-      <text v-if="!compact" :x="label.x" :y="BASE + 64" class="value">{{ label.value }}</text>
-    </g>
-
-    <g v-if="playheadPoint" class="playhead">
-      <line :x1="playheadPoint.x" :y1="TOP - 10" :x2="playheadPoint.x" :y2="BASE" />
-      <circle :cx="playheadPoint.x" :cy="playheadPoint.y" r="9" />
-    </g>
-
-    <g
-      v-for="h in handles"
-      :key="h.key"
-      class="handle"
-      :class="[h.key, { held: dragging === h.key }]"
-      @pointerdown.prevent="grab(h.key, $event)"
-    >
-      <circle :cx="h.x" :cy="h.y" r="26" class="hit" />
-      <!-- Sustain is a level, not a time: a fader cap that only moves up and down. -->
-      <g v-if="h.key === 'sustain'" :transform="`translate(${h.x} ${h.y})`">
-        <path d="M-7 -22 L0 -30 L7 -22 M-7 22 L0 30 L7 22" class="chevrons" />
-        <g class="fader">
-          <rect x="-24" y="-10" width="48" height="20" rx="6" class="dot" />
-          <line x1="-12" y1="0" x2="12" y2="0" class="grip" />
-        </g>
+      <g v-for="label in labels" :key="label.key" class="label" :class="{ active: playheadPoint?.phase === label.key }">
+        <text :x="label.x" :y="BASE + (compact ? 54 : 42)" class="letter">{{ label.letter }}</text>
+        <text v-if="!compact" :x="label.x" :y="BASE + 64" class="value">{{ label.value }}</text>
       </g>
-      <circle v-else :cx="h.x" :cy="h.y" r="12" class="dot" />
+
+      <g v-if="playheadPoint" class="playhead">
+        <line :x1="playheadPoint.x" :y1="TOP - 10" :x2="playheadPoint.x" :y2="BASE" />
+        <circle :cx="playheadPoint.x" :cy="playheadPoint.y" r="9" />
+      </g>
+
+      <g
+        v-for="h in handles"
+        :key="h.key"
+        class="handle"
+        :class="[h.key, { held: dragging === h.key }]"
+        @pointerdown.prevent="grab(h.key, $event)"
+      >
+        <circle :cx="h.x" :cy="h.y" r="26" class="hit" />
+        <!-- Sustain is a level, not a time: a fader cap that only moves up and down. -->
+        <g v-if="h.key === 'sustain'" :transform="`translate(${h.x} ${h.y})`">
+          <path d="M-7 -22 L0 -30 L7 -22 M-7 22 L0 30 L7 22" class="chevrons" />
+          <g class="fader">
+            <rect x="-24" y="-10" width="48" height="20" rx="6" class="dot" />
+            <line x1="-12" y1="0" x2="12" y2="0" class="grip" />
+          </g>
+        </g>
+        <circle v-else :cx="h.x" :cy="h.y" r="12" class="dot" />
+      </g>
     </g>
   </svg>
 </template>
@@ -197,6 +215,10 @@ function drop() {
   touch-action: none;
   user-select: none;
   overflow: visible;
+}
+
+.drawing {
+  transition: translate 0.25s ease;
 }
 
 .axis {

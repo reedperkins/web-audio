@@ -123,7 +123,7 @@ function stopAll() {
 
 <template>
   <div class="adsr-demo">
-    <AdsrEditor v-model="envModel" class="editor" :playhead="playhead" @commit="start(PREVIEW_HOLD)" />
+    <AdsrEditor v-model="envModel" class="editor" center :playhead="playhead" @commit="start(PREVIEW_HOLD)" />
     <div class="controls">
       <AdsrPresets :presets="envelopePresets" :current="env" @pick="pick" />
       <!-- PLACEHOLDER(refine): trigger button look -->
