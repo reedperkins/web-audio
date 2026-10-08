@@ -44,7 +44,8 @@ withDefaults(defineProps<{ on?: boolean; action?: boolean; disabled?: boolean }>
   color: var(--accent);
 }
 
-:global(.toggle-chip:not(.action):hover:not(:disabled)) {
+/* Not when it's on: the hover color would hide the text on the fill. */
+:global(.toggle-chip:not(.action):not(.on):hover:not(:disabled)) {
   border-color: var(--accent);
   color: var(--accent);
 }
