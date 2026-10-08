@@ -275,7 +275,7 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 - **Depends on:** 2.5
 - **Docs:** MDN `decodeAudioData`, `AudioBuffer`, `AudioBufferSourceNode`
 - **Goal:** the vendored clips in `public/samples/` (with `CREDITS.md`); `audio/samples.ts` (the clip list, loaded and decoded once, shared by section 6); `BufferView` (a waveform drawn from `getChannelData`, with a playhead); `BufferDemo` on 6a, which plays the slide's code and shows the buffer's channels, sample rate and length. Placeholder slides for 6b–6d.
-- **Placeholder OK:** the waveform look; `hello.mp3` is a `say` voice until Reed records one.
+- **Placeholder OK:** the waveform look. `hello.mp3` stays a macOS `say` voice.
 - **Done when:** screenshot; signal check after Play; the playhead reaches the end as the sound ends; slide-leave check; the offline check passes with every clip loading.
 - **Listen for:** the Apollo clip plays all the way through, clean.
 - **Commit:** "Add vendored samples and buffer demo"
