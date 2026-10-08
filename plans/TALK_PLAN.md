@@ -105,7 +105,7 @@ Code on slides is written to teach: short and plain, no imports, cleanup or erro
 - **Demo (`SequencerDemo`):** a chiptune/retro loop. My first click starts it, which also unlocks audio. A small step sequencer with a few live controls (tempo, which notes play) that I change on the fly, to show it's a real system and not a recording.
 - **Say:** "Everything you're hearing is being generated live in this browser tab. In 20 minutes we're going to build the pieces from nothing."
 - **Needs:** a step grid, tempo control, and a scheduler that plans notes slightly ahead on the audio clock (`ctx.currentTime`), so tempo changes stay in time.
-- `TODO` the loop itself: melody, bass, drums? How many tracks?
+- **The loop:** 16 eighth-note steps (two bars, Am F C G) on four tracks: drums (kick, snare, hat on noise), triangle bass, pulse-wave pad, pulse-wave melody. Click or drag cells to toggle, scroll a note cell to move it through the scale (or a pad cell through the chords), click a track name to mute it.
 - `TODO` does the loop keep playing under the title slide, or stop when I move on?
 - **Risk:** low. It doesn't depend on MIDI or the mic.
 

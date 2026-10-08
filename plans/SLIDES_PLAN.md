@@ -269,6 +269,7 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 - **Listen for:** steady timing; tempo and note changes are audible right away.
 - **Fallback if skipped:** the talk opens on the title slide.
 - **Commit:** "Add cold open sequencer"
+- **Status:** built, awaiting review. `audio/chiptune.ts` (pattern, instruments, lookahead scheduler) and `SequencerDemo` on slide 1; `audio/sequencer.ts` still plays the 5d songs. Checked: signal after Play, playhead follows the audio clock, 150 → 100 bpm mid-loop goes from 0.2 s to 0.3 s steps with no gap or double, scroll and mute work, silence after leaving.
 
 ### [ ] 4.2a Section 6a: Samples and the buffer view
 - **Depends on:** 2.5

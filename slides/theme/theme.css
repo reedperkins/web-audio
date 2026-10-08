@@ -17,6 +17,11 @@
   --overlap: #f5c400;
   /* The filter's envelope, so it reads apart from the volume's. */
   --filter: #1c7ed6;
+  /* The cold-open sequencer's tracks. */
+  --seq-drums: #495057;
+  --seq-bass: #1c7ed6;
+  --seq-pad: #2b8a3e;
+  --seq-melody: #d9480f;
 
   --font-display: system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
