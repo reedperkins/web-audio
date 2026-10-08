@@ -24,8 +24,8 @@ import type { Harmonic } from './FilterResponse.vue'
 // so nothing moves. The oscillator is always a sawtooth, so there's plenty to
 // carve. A presets node above it sets the filter, both envelopes and the LFO
 // at once. MIDI, the on-screen keys and the hold button play it; picking a
-// preset or letting go of an ADSR handle plays a note, or restarts the held
-// one.
+// preset or letting go of a volume envelope handle plays a note, or restarts
+// the held one. The frequency slider follows the live cutoff.
 const props = withDefaults(defineProps<{ envAt?: number; wahAt?: number }>(), { envAt: 1, wahAt: 2 })
 
 const SOURCE = 'Filter demo'
@@ -69,8 +69,9 @@ const filterEnvModel = computed({
 
 // The cutoff slider moves in octaves, so each bit of travel sounds the same.
 const octaves = Math.log2(CUTOFF_RANGE.max / CUTOFF_RANGE.min)
+const posOf = (hz: number) => Math.min(1, Math.max(0, Math.log2(hz / CUTOFF_RANGE.min) / octaves))
 const cutoffPos = computed({
-  get: () => Math.log2(filter.cutoff / CUTOFF_RANGE.min) / octaves,
+  get: () => posOf(filter.cutoff),
   set: (pos: number) => (filter.cutoff = pos >= 1 ? CUTOFF_RANGE.max : CUTOFF_RANGE.min * 2 ** (pos * octaves)),
 })
 const hz = (pos: number) => {
@@ -119,6 +120,19 @@ function loop() {
   raf = requestAnimationFrame(loop)
 }
 
+// The frequency slider follows the live cutoff, so the envelope and the LFO
+// move it while a note plays. While it's dragged, it shows the cutoff being
+// set instead, so the thumb stays under the pointer.
+const draggingCutoff = ref(false)
+const cutoffKnob = computed({
+  get: () => (draggingCutoff.value ? cutoffPos.value : posOf(cutoffNow.value)),
+  set: (pos: number) => (cutoffPos.value = pos),
+})
+function grabCutoff() {
+  draggingCutoff.value = true
+  addEventListener('pointerup', () => (draggingCutoff.value = false), { once: true })
+}
+
 // Drawn once at rest, and again on any change while the slide isn't playing.
 onMounted(update)
 watch([() => ({ ...filter }), wave], () => active.value || update())
@@ -155,7 +169,7 @@ function retrigger() {
   pressKey(HOLD_NOTE, HOLD_VELOCITY, SOURCE)
 }
 
-// After an envelope edit: restart the held note, or play a short one.
+// After a volume envelope edit: restart the held note, or play a short one.
 let previewTimer: ReturnType<typeof setTimeout> | undefined
 async function preview() {
   if (holding.value) return retrigger()
@@ -240,12 +254,12 @@ watch(wahOn, setWah)
         <code class="type">'lowpass'</code>
       </div>
       <div class="knobs">
-        <Slider v-model="cutoffPos" class="knob" label="frequency" :step="0.001" :format="hz" />
+        <Slider v-model="cutoffKnob" class="knob" label="frequency" :step="0.001" :format="hz" @pointerdown="grabCutoff" />
         <Slider v-model="filter.resonance" class="knob" label="resonance" :max="RESONANCE_MAX" :step="0.5" :format="dB" />
       </div>
       <div class="env filter-env" :class="{ hidden: !envStep }">
         <div class="sub">filter envelope</div>
-        <AdsrEditor v-model="filterEnvModel" class="adsr" compact @commit="preview" />
+        <AdsrEditor v-model="filterEnvModel" class="adsr" compact center />
         <Slider
           v-model="filter.amount"
           class="knob"
@@ -259,7 +273,7 @@ watch(wahOn, setWah)
     <template #amp>
       <div class="env amp-env">
         <div class="sub">volume envelope</div>
-        <AdsrEditor v-model="envModel" class="adsr" compact @commit="preview" />
+        <AdsrEditor v-model="envModel" class="adsr" compact center @commit="preview" />
       </div>
     </template>
     <template #out>

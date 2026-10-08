@@ -7,8 +7,10 @@ import { GLIDE, fadeOut } from './envelope'
 // envelope's gain. The "Carve it: filters" slide edits these settings; every
 // new note reads them, and held notes follow cutoff and resonance changes.
 //
-// It starts wide open (cutoff at the top, no resonance, no envelope), so it
-// can't be heard until that slide changes it.
+// It starts wide open (cutoff at the top, no resonance), so it can't be heard
+// until that slide changes it. The envelope amount starts at 1 octave for that
+// slide; with the cutoff at the top it changes nothing (the cutoff can't go
+// past it).
 export interface FilterSettings {
   // Hz
   cutoff: number
@@ -24,7 +26,7 @@ export const CUTOFF_RANGE = { min: 40, max: ctx.sampleRate / 2 }
 // Past about 15 dB, a cutoff sitting on a chord's fundamentals can clip.
 export const RESONANCE_MAX = 15
 export const AMOUNT_MAX = 4800
-export const OPEN: FilterSettings = { cutoff: CUTOFF_RANGE.max, resonance: 0, amount: 0 }
+export const OPEN: FilterSettings = { cutoff: CUTOFF_RANGE.max, resonance: 0, amount: 1200 }
 
 export const filter = reactive<FilterSettings>({ ...OPEN })
 
