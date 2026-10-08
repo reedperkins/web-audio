@@ -59,8 +59,12 @@ const ratio = computed(() => 2 ** (props.semitones / 12))
 const stretch = computed(() => 1 / (props.granular ? speed.value : speed.value * ratio.value))
 const inDur = computed(() => props.buffer?.duration ?? 1)
 const outDur = computed(() => inDur.value * stretch.value)
-// Seconds across the full width: whichever lane is longer fills it.
-const span = computed(() => Math.max(inDur.value, outDur.value))
+// Seconds across the full width: a fixed scale set by the original, so the
+// original holds still and the output grows and shrinks as it stretches. Up
+// to FIT× as long; stretched further, the output fills the width and the
+// original shrinks instead.
+const FIT = 2
+const span = computed(() => Math.max(inDur.value * FIT, outDur.value))
 
 // Seconds across the width when zoomed in; null shows everything.
 const ZOOMS = [null, 2, 0.5].map((z) => ({ value: z, label: z === null ? 'all' : `${z} s` }))
@@ -651,6 +655,7 @@ onUnmounted(() => resize.disconnect())
   flex: 1;
   min-width: 0;
   border-radius: 0.4rem;
+  overflow: hidden;
   background: var(--surface);
   cursor: ew-resize;
   touch-action: none;
