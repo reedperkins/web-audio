@@ -9,7 +9,7 @@ import {
 } from '../audio/filter'
 import { pressKey, releaseKey } from '../audio/input'
 import { mtof } from '../audio/mtof'
-import { playInto, releaseAll, wave } from '../audio/synth'
+import { playInto, releaseAll, stopPlayingInto, wave } from '../audio/synth'
 import { useDemo, vNoFocus } from '../audio/useDemo'
 import type { Harmonic } from './FilterResponse.vue'
 
@@ -130,7 +130,7 @@ function leave() {
   cancelAnimationFrame(raf)
   stopHold()
   releaseAll()
-  playInto(null)
+  stopPlayingInto(out.value)
   update()
 }
 

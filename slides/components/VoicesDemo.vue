@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { held, pressKey, releaseKey } from '../audio/input'
 import { progression } from '../audio/presets'
-import { cut, playInto, releaseAll } from '../audio/synth'
+import { cut, playInto, releaseAll, stopPlayingInto } from '../audio/synth'
 import { useDemo } from '../audio/useDemo'
 
 // The "Polyphony" demo. On this slide MIDI and the on-screen keys play the
@@ -27,7 +27,7 @@ const { out } = useDemo({
     stopCycle()
     play(null)
     releaseAll()
-    playInto(null)
+    stopPlayingInto(out.value)
   },
 })
 

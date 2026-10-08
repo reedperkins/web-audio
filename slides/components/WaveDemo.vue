@@ -8,7 +8,7 @@ import { pressKey, releaseKey } from '../audio/input'
 import { playSequence } from '../audio/sequencer'
 import type { Song } from '../audio/songs'
 import { songs } from '../audio/songs'
-import { playInto, releaseAll, wave } from '../audio/synth'
+import { playInto, releaseAll, stopPlayingInto, wave } from '../audio/synth'
 import { useDemo } from '../audio/useDemo'
 
 // The "Wave types" demo: the synth's settings drawn as its audio graph.
@@ -61,7 +61,7 @@ function leave() {
   stopPlaying()
   endPreview()
   releaseAll()
-  playInto(null)
+  stopPlayingInto(out.value)
   songBus.disconnect()
 }
 

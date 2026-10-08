@@ -27,6 +27,13 @@ export function playInto(out: AudioNode | null) {
   if (out) bus.connect(out)
 }
 
+// A slide's leave: cut the synth off only if it's still playing into that
+// slide. Going back a slide, the new slide's enter can run before the old
+// one's leave, and the old leave mustn't unplug the new slide.
+export function stopPlayingInto(out: AudioNode) {
+  if (output === out) playInto(null)
+}
+
 // The synth's oscillator type. The wave picker and the songs set it; every
 // new note reads it.
 export const wave = ref<OscillatorType>('sine')
