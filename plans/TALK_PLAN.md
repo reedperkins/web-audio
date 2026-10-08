@@ -46,6 +46,7 @@ Status: DRAFT. `TODO` marks places where I need to decide something.
 | 5 | Numbers → pitch | `OctaveDemo` | the shared synth | `OctaveKeys` lights the pressed key and shows `mtof(n)` in Hz |
 | 5 | One voice per key / Polyphony | `VoicesDemo` | the shared synth | one box per active voice, appearing on key down and fading on release |
 | 5 | Wave types | `WaveDemo` | the shared synth; song buttons set wave + envelope and loop a melody through the sequencer | the synth as graph nodes (wave picker → ADSR → live scope) |
+| 5 | Carve it: filters | `FilterDemo` | the shared synth through a lowpass `BiquadFilterNode`; cutoff and resonance, then the filter's own ADSR and amount, then an LFO on the cutoff | the synth as graph nodes (wave → filter → ADSR → scope); in the filter node its frequency response over the playing note's harmonics, and its envelope framed in blue; an LFO node above it |
 | 6 | A file is a buffer | `BufferDemo` | one decoded clip | the buffer's waveform with a playhead, plus its size |
 | 6 | The mic | `MicDemo` | live mic, then a recording | scrolling live waveform; the recording's waveform once captured |
 | 6 | Play it differently | `SamplerDemo` | any clip or the recording, through reverse / rate / detune / loop | big waveform that flips on reverse, with loop handles and a playhead moving at the playback rate |
@@ -54,7 +55,7 @@ Status: DRAFT. `TODO` marks places where I need to decide something.
 | 6 | Sample pads | `PadsDemo` | regions copied onto pads, played from clicks, MIDI or the on-screen keys | the source waveform with selection markers, and the pads |
 | 7 | What's next ×3 | `ClipButton` | a short clip from `public/` | statement slide plus a play button |
 | 7 | One knob, a thousand oscillators | — | — | the swarm code, stepped |
-| 7 | Chaos | `ChaosDemo` | keys play a detuned saw swarm (one `ConstantSourceNode` drives every oscillator's detune) or, toggled from a pad, a granular cloud of the take at the key's pitch; pads mangle the latest recording as grains; K1–K8 and the joystick bend it all, through a crusher and a limiter; a synced 4-track looper (pads' bank B, keys 1–4) prints it and plays it back | oscillator count, scope, and `MpkMini` mirroring the controller |
+| 7 | Chaos | `ChaosDemo` | keys play a detuned saw swarm (one `ConstantSourceNode` drives every oscillator's detune) or, toggled from a pad, a granular cloud of the take at the key's pitch; pads mangle the latest recording as grains; K1–K8 and the joystick bend it all, through a crusher and a limiter (K6/K7 are the swarm's filter cutoff and resonance in osc mode, grain and scatter in voice mode, with pickup on a mode switch so nothing jumps; each key's filter also has its own envelope, a blue ADSR plus amount edited with the mouse beside the volume one); a synced 4-track looper (pads' bank B, keys 1–4) prints it and plays it back | scope (with the oscillator count on it), the volume and filter envelopes, and `MpkMini` mirroring the controller |
 | 8 | Let's play it | `HubDemo` | the shared synth | the hub (see below) |
 
 ---
@@ -68,11 +69,11 @@ Status: DRAFT. `TODO` marks places where I need to decide something.
 | 2 | First sound | 3 |
 | 3 | Volume | 2.5 |
 | 4 | Envelope | 3.5 |
-| 5 | Keyboard | 4 |
+| 5 | Keyboard (and filter) | 6.5 |
 | 6 | Other sources | 6 |
 | 7 | What's next | 1.5 |
 | 8 | Finale & close | 1 |
-| | **Total** | **24** |
+| | **Total** | **26.5** |
 
 The talk can run up to 40 minutes, so there is room to grow. If something runs long, cut from section 6 or 7 first.
 
@@ -81,7 +82,7 @@ The talk can run up to 40 minutes, so there is room to grow. If something runs l
 ## The hub
 
 - **Where:** the finale slide ("Let's play it"), full slide.
-- **Layout:** layout A with icons from `designs/hub/` (frame H): Keyboard → Oscillator → Envelope → Volume → Speaker, with a scope tapped off the end. Mic is a second source that feeds the same chain. Three "?" nodes sit to the side.
+- **Layout:** layout A with icons from `designs/hub/` (frame H): Keyboard → Oscillator → Filter → Envelope → Volume → Speaker, with a scope tapped off the end. Mic is a second source that feeds the same chain. Three "?" nodes sit to the side.
 - **No fog:** every node and wire is drawn at full strength from the start (see the rules in `designs/hub/README.md`).
 - **Hover:** the node under the cursor and its wires are highlighted.
 - **Click (optional):** jumps to that node's section in the deck.
@@ -93,7 +94,7 @@ The talk can run up to 40 minutes, so there is room to grow. If something runs l
 
 ## Slide code
 
-Code on slides is written to teach: short and plain, no imports, cleanup or error handling. The demo on the same slide runs that same code, so what's on screen is what plays. The one allowed difference: demos connect to their slide's output node instead of `ctx.destination`, so sound stops when I leave the slide. Shared pieces shown on slides (`noteOn`/`noteOff`, `Voice`, `mtof`) are the engine's real code.
+Code on slides is written to teach: short and plain, no imports, cleanup or error handling. It has to describe what the demo does, but it doesn't have to be the code that runs. The engine can be whatever it needs to be, and a slide can show a simpler version (e.g. 5c's `Voice` without the filter 5e adds). Where the slide code works as-is, the engine may use it directly; where it does, demos connect to their slide's output node instead of `ctx.destination`, so sound stops when I leave the slide.
 
 ---
 
@@ -193,7 +194,7 @@ Code on slides is written to teach: short and plain, no imports, cleanup or erro
   - **Say:** "An envelope is just a `GainNode` whose volume we schedule."
   - Note: `cancelAndHoldAtTime` works in Chrome but isn't supported in every browser yet (it's not Baseline). Fine for the talk.
 
-### 5. Keyboard (about 4 min)
+### 5. Keyboard (about 6.5 min, 2.5 of it the filter)
 
 All of these play the shared synth.
 
@@ -218,6 +219,21 @@ All of these play the shared synth.
   ```
 - **5d Wave types (`WaveDemo`):** sine, square, sawtooth, triangle. The synth drawn as its graph: the wave pictures pick the synth's wave, the ADSR editor sets the envelope, and a live scope shows the real shape.
   Songs on the same slide set the wave and envelope, then loop a melody through the sequencer: Zelda (square), Mountain King (sawtooth), Harry Potter (sine). Changes while a song plays are heard on the next notes.
+- **5e Carve it: filters (`FilterDemo`):** the step 5d sets up: a saw is bright and buzzy because it's full of harmonics, and a filter takes some away. This is the missing middle of the classic synth: oscillator → filter → amp. One slide, no code: the synth drawn as graph nodes, built up over two clicks. Entering the slide switches the synth to sawtooth so the filter is audible; everything else carries over.
+  - **The picture:** OscillatorNode (wave picker, Hold A2) → **BiquadFilterNode** → GainNode (the volume ADSR, framed in the accent: "volume envelope") → destination (scope). The filter node holds a frequency-response curve (`getFrequencyResponse`, log frequency axis) drawn over the harmonics of the last note played (a saw's harmonics at 1/n), so you can see the ones above the cutoff fall away, plus cutoff and resonance sliders. The curve and its cutoff dot move with the filter envelope and the LFO, worked out from the schedule the way the ADSR playhead is.
+  1. **A lowpass:** one more node in each voice. Drag the cutoff down: the saw goes dark and muffled. Push resonance up: a whistling peak at the cutoff.
+     - **Say:** "Start with a bright wave and carve away the top. That's why it's called subtractive synthesis."
+  2. **The filter's own envelope** (click 1): a second ADSR inside the filter node, framed in blue ("filter envelope"), with an amount slider (how far it opens, up to 4 octaves). Its ramps go to `filter.detune`, in cents: a straight ramp in cents is an even sweep to the ear. It holds at `amount × sustain` while the key is down, so the amount slider moves held notes, and falls back over its release. Letting go of either ADSR's handle plays a note (or restarts the held one).
+     - **Say:** "Same idea as our volume envelope, aimed at a different knob. Envelopes aren't just for volume: anything that's an `AudioParam` can move over time."
+     - Short decay, low sustain on a low note: the classic synth-bass "wow". A slow attack: the sound brightens as it swells.
+  3. **An LFO on the cutoff** (click 2): 3d's LFO connected into `filter.detune` instead of `volume.gain`. A slow sine on the cutoff is a wah. A small node above the filter, wired into it, with an on/off box and a rate slider (no `detune` label: the param is an implementation detail); depth fixed at 1 octave. It stops on leaving the slide.
+  - `TODO` the default cutoff, resonance, amount and filter ADSR (tune by ear), and filter values for each song preset.
+  - Before this slide the filter is wide open (cutoff at Nyquist, where a lowpass passes everything exactly; amount 0), so earlier slides sound as they do now. After it, the settings carry forward to the hub.
+  - Resonance tops out at 15 dB: past that, a cutoff sitting on a chord's fundamentals can clip.
+  - Both ADSRs are drawn with their right edge trimmed (`AdsrEditor`'s `width` prop, 720 of 1000), so they're bigger without the empty stretch only the longest releases use.
+  - The "Hold A2" button holds a low note, for dragging the cutoff with nothing else to play. Picking a wave (even the current one) restarts it, so both envelopes run again.
+  - Note: for `lowpass`, `Q` is a resonance in dB, not a classic Q (per MDN). The slider says "resonance".
+  - 5c keeps showing `Voice` as osc → amp; the engine's voice has the filter from the start (wide open until 5e).
 
 - **Risk:** the MIDI device or permission fails → open the on-screen keyboard and keep going.
 
@@ -278,7 +294,7 @@ Every clip is vendored in `slides/public/samples/` (credits in `CREDITS.md` ther
      - **Say:** "Fixed the clicks, broke the volume."
   3. **Overlap the grains** (`stage="overlap"`): overlapping by half, each fading in as the last fades out; the dashed sum goes flat. Now the pitch slider, the window picker and the **preserve pitch** toggle (off: one plain looping source, GainNode dimmed) appear. The windows are scaled so overlapping grains never add up past 1: they differ in their edges, not their loudness. Rectangle clicks; sine ripples in level (the dashed line scallops); triangle and Hann are smooth.
      - **Say:** "Pitch is how fast each grain plays. Speed is how far apart they start. That slight warble is the grains' waves not lining up where they overlap; real apps line them up more cleverly."
-- **6d′ Grains in code:** the `grain()` function (the engine's real code), with step notes: one grain is a source and a gain; pitch is `detune` in cents; `fade` is the window; higher pitch reads more buffer in the same 80 ms; speed is only how far the read position moves.
+- **6d′ Grains in code:** the `grain()` function, with step notes: one grain is a source and a gain; pitch is `detune` in cents; `fade` is the window; higher pitch reads more buffer in the same 80 ms; speed is only how far the read position moves.
   ```js
   function grain(time, offset) {
     const source = new AudioBufferSourceNode(ctx, { buffer, detune: cents })
@@ -414,6 +430,7 @@ Placeholders to refine with Reed, not by an agent alone. `grep -rn "PLACEHOLDER(
 - [ ] Audio clips: "what's next" clips, backup mic clip
 - [ ] Closing URL and QR code
 - [ ] Sample pads: pad look and layout, hit level
+- [ ] Filter slide: response curve and harmonics look, default cutoff, resonance and amount, filter values per song preset
 - [ ] Chaos slide: levels, knob ranges and start positions, grain limits, layout, MPK mini look
 
 ---

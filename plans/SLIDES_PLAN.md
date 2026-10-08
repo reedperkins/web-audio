@@ -14,7 +14,7 @@ The two-app version of this plan, and the demo app's plan it replaced, are in `w
 
 - **Stack:** Slidev in `slides/`, with its own `package.json`. Vue components with Composition API and `<script setup>`, TypeScript.
 - **What Slidev gives us:** code stepping (```` ```js {1|2-3|all} ````), Magic Move (```` ````md magic-move ````) for code changing between steps, layouts with named slots, a scaling 16:9 stage, and `o` overview / `g` goto.
-- **Slide code:** inline fenced code blocks, written to teach (see `TALK_PLAN.md` → "Slide code"). The demo on the slide runs the same code.
+- **Slide code:** inline fenced code blocks, written to teach (see `TALK_PLAN.md` → "Slide code"). It describes what the demo does; the engine doesn't have to run it.
 - **Sections:** `slides.md` holds the headmatter plus one `src:` import per section in `pages/`.
 - **Theme:** `theme/` holds the tokens (see `TALK_PLAN.md` → "Theme"). `style.css` imports it and maps the tokens onto Slidev's own CSS variables. Code highlighting is set in the Shiki config (`setup/shiki.ts`).
 - **No presenter mode, no console use.** Reed is the only one running the deck.
@@ -52,8 +52,9 @@ const { ctx, out } = useDemo({
 
 From section 4 on, the slides share one instrument (`audio/synth.ts`):
 
-- Reactive settings: `wave` and `env` (A/D/S/R). The ADSR editor, presets, wave picker and instrument presets all edit these.
-- A `voices` map with `noteOn(note, velocity)` / `noteOff(note)`. `Voice` and `noteOn`/`noteOff` are the code shown on the slides.
+- Reactive settings: `wave`, `env` (A/D/S/R) and `filter` (cutoff, resonance, envelope amount). The ADSR editor, presets, wave picker, filter controls and instrument presets all edit these.
+- Each voice is osc → lowpass filter → amp. The filter starts wide open (amount 0), so it can't be heard until 5e changes it.
+- A `voices` map with `noteOn(note, velocity)` / `noteOff(note)`. The slides show teaching versions of `Voice` and `noteOn`/`noteOff`; the engine's can differ.
 - It plays into the current slide's `out`, so leaving a slide still silences held notes.
 - `audio/input.ts`: MIDI and the on-screen keyboard, always listening, always playing the synth. A reactive list of recent MIDI messages feeds the raw-MIDI slide. No QWERTY input: Slidev uses letter keys as shortcuts.
 
@@ -333,6 +334,24 @@ Each slide's content and demo are in `TALK_PLAN.md` ("Demos by slide" and the se
 - **Placeholder OK:** its look. It must track the envelope phase correctly.
 - **Done when:** a screenshot mid-note shows the playhead in the right phase.
 - **Commit:** "Add envelope playhead"
+
+### [ ] 4.6 Section 5e: Filter
+- **Depends on:** 3.5, 3.8
+- **Docs:** MDN `BiquadFilterNode` (constructor options, `frequency`, `detune`, `Q`; for `lowpass`, `Q` is resonance in dB), `getFrequencyResponse()`, `AudioParam.linearRampToValueAtTime`
+- **Goal:** a per-voice lowpass in `audio/synth.ts` (osc → filter → amp), with reactive `filter` settings (cutoff, resonance, amount) and the slide's `filterOn` scheduling `filter.detune`. `FilterDemo` on a new 5e slide after 5d: the synth as graph nodes (wave → filter → ADSR → scope), cutoff and resonance sliders on the filter node, an amount slider from step 2, and the frequency-response curve over the last note's harmonics. Three code steps as in `TALK_PLAN.md` 5e; step 3 (LFO on the cutoff) is optional. Entering the slide switches the wave to sawtooth. The song presets in `audio/presets.ts` get filter values.
+- **Not a placeholder:** the filter's place in the voice, the wide-open default (earlier slides must sound unchanged), cutoff changes without zipper noise (`setTargetAtTime` on held voices), and the filter envelope restarting cleanly on a retriggered note.
+- **Placeholder OK:** the response curve and harmonics look, the default cutoff, resonance and amount, the song presets' filter values.
+- **Done when:** screenshot on each step; signal check; render check: a 110 Hz saw through a 500 Hz cutoff has much less energy above 2 kHz than with the filter open, and with amount 3600 the detune peaks at the attack time and is back to 0 after attack + decay; with the defaults, a note on 5c renders the same as before the change; slide-leave check; navigation check.
+- **Listen for:** the cutoff slider darkens the saw smoothly with no zipper noise; high resonance whistles but doesn't blow up the level; Pluck on a low note gives the synth-bass "wow"; earlier slides (5c, 5d) sound unchanged.
+- **Commit:** "Add filter to synth and filter slide"
+- **Status:** built, awaiting review. `audio/filter.ts` (settings, `filterOn`, per-voice `voiceFilter` used by the synth and the sequencer, the wah LFO, `responseDb`), `FilterResponse`, `FilterDemo`, slide 17. `Slider` gained a `format` prop. Song presets carry a filter, all wide open for now. Checked: render (envelope peaks at 3600 cents at the attack time, 0 after attack + decay; 500 Hz cutoff leaves about 1/8 the energy above 2 kHz; wide open at Nyquist is sample-identical to no filter), signal on all three steps, LFO swings the level at 3 Hz, slide-leave silence, navigation after clicking controls, 5c and 5d still play.
+
+### [ ] 4.7 Filter node on the hub
+- **Depends on:** 3.9, 4.6
+- **Goal:** a Filter node in the hub between Oscillator and Envelope (see `TALK_PLAN.md` → "The hub"), with its wires, hover and (with 4.4) pulse. Its click target (5.3) is the 5e slide.
+- **Placeholder OK:** its icon (`designs/hub/` has none for a filter yet) and position.
+- **Done when:** screenshot with the Filter node hovered.
+- **Commit:** "Add filter node to hub"
 
 ---
 

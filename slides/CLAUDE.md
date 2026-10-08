@@ -31,9 +31,10 @@ to check a slide visually. Check https://sli.dev for features and config.
 - Demos connect to `useDemo()`'s `out`, never to `master` or `ctx.destination`
   directly, so sound stops on leave and the analyser sees it.
 - Keep audio nodes out of deep reactivity (`shallowRef` / `markRaw`).
-- Slide code is inline in fenced code blocks, written to teach. The demo on the
-  slide runs the same code; the only allowed difference is connecting to `out`
-  instead of `ctx.destination`.
+- Slide code is inline in fenced code blocks, written to teach. It describes
+  what the demo does, but the engine doesn't have to run it: engine code can be
+  whatever it needs to be. Engine code that does reuse slide code connects to
+  `out` instead of `ctx.destination`.
 - Never let a link or control keep focus (use `noFocus`). Slidev turns off its
   shortcuts while an `<a>`, `<button>` or `<input>` has focus.
 - Step-driven behavior depends on the current step number, never on each click.
