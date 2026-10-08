@@ -7,11 +7,11 @@
 <div class="next">
   <figure>
     <img src="/images/vocoder.jpg" alt="A vocoder plugin with a bar graph of 40 frequency bands">
-    <figcaption><b>Vocoder</b>Become Daft Punk</figcaption>
+    <figcaption><b>Vocoder</b>Use your voice to modulate a carrier signal! Become Daft Punk!</figcaption>
   </figure>
   <figure>
-    <img src="/images/granular.png" alt="A waveform editor with a drum loop sliced into numbered pieces">
-    <figcaption><b>Granular synthesis</b>More formal version of the chaos synth</figcaption>
+    <img src="/images/optical-theremin.png" alt="A Max patch that turns movement around an eye on a webcam into a control signal">
+    <figcaption><b>Optical Theremin</b>Automating signals via webcam &amp; eye tracking<span class="credit">patch by Morten Elkjær</span></figcaption>
   </figure>
   <figure>
     <img src="/images/tone-of-life.png" alt="Tone of Life: a Game of Life grid with Start, Stop and Step buttons">
@@ -207,7 +207,7 @@
   <li>Software (+ hardware integration) lets us build basically any interface we want. This is an opportunity to think critically about the interfaces we design!</li>
   <li>AI can build the tools. We get to design them, master them, and make the music</li>
   <li>A whole instrument can ship as one HTML file. The Web Audio API makes that possible</li>
-  <li>So go build your musical dreams</li>
+  <li>So go build cool stuff</li>
 </ol>
 </v-clicks>
 
