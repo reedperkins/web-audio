@@ -6,7 +6,8 @@ import { useBufferPlayer } from '../audio/useBufferPlayer'
 import { useDemo } from '../audio/useDemo'
 
 // Plays the "A file is a buffer" slide's code: one decoded clip through a
-// buffer source. The picture is the buffer itself, with a playhead.
+// buffer source. The picture is the buffer itself, with a playhead. The button
+// pauses and carries on from the same spot.
 const clip = sample('small-step')
 const failed = ref(false)
 
@@ -19,12 +20,12 @@ const { out } = useDemo({
   },
   leave: () => stop(),
 })
-const { playing, position, play, stop } = useBufferPlayer(out)
+const { playing, position, play, pause, stop } = useBufferPlayer(out)
 
 const buffer = computed(() => clip.buffer)
 
 async function toggle() {
-  if (playing.value) return stop()
+  if (playing.value) return pause()
   await unlock()
   play(await load(clip))
 }
@@ -45,7 +46,7 @@ const facts = computed(() => {
 <template>
   <div class="buffer-demo">
     <div class="buffer-demo-bar">
-      <PlayButton :playing="playing" @play="toggle" />
+      <PlayButton :playing="playing" pauses @play="toggle" />
       <span v-if="failed" class="buffer-demo-facts">Couldn't load the clip.</span>
       <span v-else-if="facts" class="buffer-demo-facts">
         <span v-for="fact in facts" :key="fact">{{ fact }}</span>
