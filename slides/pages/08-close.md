@@ -1,14 +1,10 @@
----
-# PLACEHOLDER(refine): closing URL, QR code and closing line, until hosting is decided
----
-
 <div class="close">
   <div>
     <h1>Thanks!</h1>
-    <p class="url">example.com/web-audio</p>
+    <p class="url">github.com/reedperkins/web-audio</p>
     <p class="who">Reed Perkins · Utah JS</p>
   </div>
-  <QrCode url="https://example.com/web-audio" class="qr" />
+  <QrCode url="https://github.com/reedperkins/web-audio" class="qr" />
 </div>
 
 <style>
