@@ -1,5 +1,6 @@
 import { ctx } from './audio'
 import type { Envelope } from './envelope'
+import { fadeOut } from './envelope'
 import { mtof } from './mtof'
 
 // The "Chaos" slide: two instruments into one limiter.
@@ -137,13 +138,6 @@ export interface FilterEnvelope extends Envelope {
 // sounding as it did until the slider is moved.
 export const START_FILTER_ENVELOPE: FilterEnvelope = { attack: 0.01, decay: 0.4, sustain: 0.3, release: 0.5, amount: 0 }
 export const MAX_FILTER_AMOUNT = 4800
-
-// An envelope's level (0–1) `s` seconds after key down, while held.
-function heldLevel(e: Envelope, s: number) {
-  if (s < e.attack) return s / e.attack
-  if (s < e.attack + e.decay) return 1 - (1 - e.sustain) * (s - e.attack) / e.decay
-  return e.sustain
-}
 const DRIFTS = 8
 const SMOOTH = 0.03
 
@@ -351,17 +345,9 @@ export function createChaos(out: AudioNode, knobs: Knobs, envelope: Envelope, fi
 
   function release(s: Swarm, fade: number) {
     const t = ctx.currentTime
-    for (const e of s.envs) {
-      e.gain.cancelAndHoldAtTime(t)
-      e.gain.linearRampToValueAtTime(0, t + fade)
-    }
-    // The filter falls back over its own release. cancelAndHoldAtTime only
-    // holds a value while a ramp is still running; past the decay it adds
-    // nothing, so the hold is set by hand.
-    const { detune } = s.filter
-    detune.cancelAndHoldAtTime(t)
-    detune.setValueAtTime(s.shape.amount * heldLevel(s.shape, t - s.at), t)
-    detune.linearRampToValueAtTime(0, t + s.shape.release)
+    for (const e of s.envs) fadeOut(e.gain, t, fade)
+    // The filter falls back over its own release.
+    fadeOut(s.filter.detune, t, s.shape.release)
     for (const osc of s.oscs) osc.stop(t + fade + 0.05)
     // Once the last one ends, cut every connection into it so nothing keeps
     // the swarm alive.
@@ -553,8 +539,7 @@ export function createChaos(out: AudioNode, knobs: Knobs, envelope: Envelope, fi
     if (!s) return
     endStream(note)
     const t = ctx.currentTime
-    s.amp.gain.cancelAndHoldAtTime(t)
-    s.amp.gain.linearRampToValueAtTime(0, t + 0.05)
+    fadeOut(s.amp.gain, t, 0.05)
     setTimeout(() => s.amp.disconnect(), 400)
   }
 

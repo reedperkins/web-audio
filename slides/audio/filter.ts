@@ -1,6 +1,7 @@
 import { reactive, watch } from 'vue'
 import { ctx } from './audio'
 import type { Envelope } from './envelope'
+import { GLIDE, fadeOut } from './envelope'
 
 // The synth's lowpass filter: one per voice, between the oscillator and the
 // envelope's gain. The "Carve it: filters" slide edits these settings; every
@@ -84,16 +85,8 @@ function filterOn(detune: AudioParam, t: number) {
   detune.linearRampToValueAtTime(filter.amount * sustain, t + attack + decay)
 }
 
-// And noteOff's: back to the cutoff over the release, from `held`, the
-// envelope's value at `t`. cancelAndHoldAtTime only holds a value when a
-// ramp is still running at `t`; once the decay has ended it adds nothing, and
-// the release ramp would start back at the end of the decay. The explicit
-// setValueAtTime pins it to `t`.
-function filterOff(detune: AudioParam, t: number, held: number) {
-  detune.cancelAndHoldAtTime(t)
-  detune.setValueAtTime(held, t)
-  detune.linearRampToValueAtTime(0, t + filterEnv.release)
-}
+// And noteOff's: back to the cutoff over the release, from wherever it is.
+const filterOff = (detune: AudioParam, t: number) => fadeOut(detune, t, filterEnv.release)
 
 // One voice's filter, and what its envelope was scheduled with, for drawing
 // where the cutoff is and for moving held notes when `amount` changes.
@@ -133,10 +126,9 @@ export function voiceFilter(frequency: number, t: number, source: AudioScheduled
   return {
     node,
     release(at: number) {
-      const held = envelopeDetune(sweep, at)
       sweep.off = at
       sweep.release = filterEnv.release
-      filterOff(node.detune, at, held)
+      filterOff(node.detune, at)
     },
   }
 }
@@ -161,7 +153,7 @@ function envelopeDetune(sweep: Sweep, t: number): number {
   const { at, off, amount, attack, decay, sustain, release } = sweep
   if (off !== null && t >= off) {
     const held = envelopeDetune({ ...sweep, off: null }, off)
-    return Math.max(0, held * (1 - (t - off) / release))
+    return held * Math.exp((-GLIDE * (t - off)) / release)
   }
   const s = t - at
   if (s < attack) return amount * s / attack

@@ -1,4 +1,5 @@
 import { ctx } from './audio'
+import { fadeOut as glideOut } from './envelope'
 import type { GrainSettings } from './grains'
 import { playGrains } from './grains'
 
@@ -49,8 +50,7 @@ export function hit(pad: AudioBuffer, into: AudioNode, semitones: number, veloci
 
   function fadeOut(fade: number) {
     const t = ctx.currentTime
-    amp.gain.cancelAndHoldAtTime(t)
-    amp.gain.linearRampToValueAtTime(0, t + fade)
+    glideOut(amp.gain, t, fade)
     stopped = true
     return t + fade
   }

@@ -1,5 +1,5 @@
 import { ctx } from './audio'
-import { env, noteOff, noteOn } from './envelope'
+import { env, fadeOut, noteOff, noteOn } from './envelope'
 import { voiceFilter } from './filter'
 import { mtof } from './mtof'
 import { wave } from './synth'
@@ -70,8 +70,7 @@ export function playSequence(steps: Step[], bpm: number, into: AudioNode) {
     clearInterval(timer)
     const t = ctx.currentTime
     for (const { osc, amp } of live) {
-      amp.gain.cancelAndHoldAtTime(t)
-      amp.gain.linearRampToValueAtTime(0, t + CUT)
+      fadeOut(amp.gain, t, CUT)
       osc.stop(t + CUT)
     }
   }

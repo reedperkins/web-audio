@@ -153,8 +153,10 @@ export function createGrainPlayer(
   function stop() {
     const t = ctx.currentTime
     for (const { source, env } of live) {
+      // A glide, not a ramp: it starts from the grain's level now, whatever
+      // its window was doing (see noteOff in envelope.ts).
       env.gain.cancelAndHoldAtTime(t)
-      env.gain.linearRampToValueAtTime(0, t + CUT)
+      env.gain.setTargetAtTime(0, t, CUT / 5)
       source.stop(t + CUT)
     }
   }

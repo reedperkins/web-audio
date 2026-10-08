@@ -42,7 +42,7 @@ function noteOn(gain, t) {
 }
 function noteOff(gain, t) {
   gain.cancelAndHoldAtTime(t)
-  gain.linearRampToValueAtTime(0, t + env.release)
+  gain.setTargetAtTime(0, t, env.release / 5)
 }
 ```
 

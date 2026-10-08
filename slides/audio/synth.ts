@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { ctx } from './audio'
-import { env, noteOff, noteOn } from './envelope'
+import { env, fadeOut, noteOff, noteOn } from './envelope'
 import { voiceFilter } from './filter'
 import { onNote } from './input'
 import { mtof } from './mtof'
@@ -67,8 +67,7 @@ export function cut(note: number) {
   const voice = voices.get(note)
   if (!voice) return
   const t = ctx.currentTime
-  voice.amp.gain.cancelAndHoldAtTime(t)
-  voice.amp.gain.linearRampToValueAtTime(0, t + CUT)
+  fadeOut(voice.amp.gain, t, CUT)
   voice.osc.stop(t + CUT)
   voices.delete(note)
 }

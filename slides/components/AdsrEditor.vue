@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { Envelope, EnvelopePosition, TimeSegment } from '../audio/envelope'
-import { fractionToTime, timeToFraction } from '../audio/envelope'
+import { fractionToTime, GLIDE, timeToFraction } from '../audio/envelope'
 import { duration } from '../lib/format'
 
 // A drag-and-drop ADSR curve: <AdsrEditor v-model="env" @commit="play" />
@@ -43,9 +43,17 @@ const pts = computed(() => {
   return { xA, xD, xS, xR, yS: yOf(sustain) }
 })
 
+// The release is a glide (see noteOff), so it's drawn as a curve: falling
+// fast, then easing into silence at the R handle.
+const RELEASE_POINTS = 16
 const path = computed(() => {
   const { xA, xD, xS, xR, yS } = pts.value
-  return `M${X0} ${BASE} L${xA} ${TOP} L${xD} ${yS} L${xS} ${yS} L${xR} ${BASE}`
+  let release = ''
+  for (let i = 1; i < RELEASE_POINTS; i++) {
+    const f = i / RELEASE_POINTS
+    release += ` L${xS + (xR - xS) * f} ${BASE - (BASE - yS) * Math.exp(-GLIDE * f)}`
+  }
+  return `M${X0} ${BASE} L${xA} ${TOP} L${xD} ${yS} L${xS} ${yS}${release} L${xR} ${BASE}`
 })
 
 type Handle = 'attack' | 'decay' | 'sustain' | 'release'

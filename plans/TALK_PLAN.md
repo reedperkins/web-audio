@@ -188,11 +188,12 @@ Code on slides is written to teach: short and plain, no imports, cleanup or erro
   }
   function noteOff(gain, t) {
     gain.cancelAndHoldAtTime(t)
-    gain.linearRampToValueAtTime(0, t + env.release)
+    gain.setTargetAtTime(0, t, env.release / 5)
   }
   ```
   - **Say:** "An envelope is just a `GainNode` whose volume we schedule."
   - Note: `cancelAndHoldAtTime` works in Chrome but isn't supported in every browser yet (it's not Baseline). Fine for the talk.
+  - Why a glide for the release: `cancelAndHoldAtTime` only holds a value while a ramp is still running. After the decay it adds nothing, so a `linearRampToValueAtTime(0, …)` would start back at the end of the decay: held notes would drop at key-up, and releases scheduled ahead would fade through the sustain. `setTargetAtTime` always starts from the actual value. With a time constant of release / 5 it's ~99% silent by the release time; the ADSR editor draws the release as that curve.
 
 ### 5. Keyboard (about 6.5 min, 2.5 of it the filter)
 

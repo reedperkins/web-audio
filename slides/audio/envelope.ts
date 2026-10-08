@@ -18,16 +18,32 @@ export function noteOn(gain: AudioParam, t: number) {
   gain.linearRampToValueAtTime(env.sustain,
     t + env.attack + env.decay)
 }
+// The release glides to 0 from wherever the gain is at `t`. A linear ramp
+// can't do that once the decay has ended: cancelAndHoldAtTime only holds a
+// value while a ramp is running, so the ramp would start back at the end of
+// the decay. A target glide always starts from the actual value.
 export function noteOff(gain: AudioParam, t: number) {
   gain.cancelAndHoldAtTime(t)
-  gain.linearRampToValueAtTime(0, t + env.release)
+  gain.setTargetAtTime(0, t, env.release / 5)
+}
+
+// A glide with time constant `seconds / GLIDE` is about 99% of the way there
+// after `seconds`.
+export const GLIDE = 5
+
+// Fades any param to 0 over about `seconds`, from wherever it is at `t`: the
+// same glide as noteOff, for releases and quick cuts everywhere else.
+export function fadeOut(param: AudioParam, t: number, seconds: number) {
+  param.cancelAndHoldAtTime(t)
+  param.setTargetAtTime(0, t, seconds / GLIDE)
 }
 
 export type Phase = 'attack' | 'decay' | 'sustain' | 'release'
 
 // Where a note is in its envelope, for drawing a playhead. `progress` runs 0→1
 // through the phase (sustain fills over SUSTAIN_DRAW seconds). Mirrors the
-// ramps noteOn/noteOff schedule; returns null once the release has finished.
+// ramps noteOn/noteOff schedule (the release is a glide, falling by e^-GLIDE
+// over its time); returns null once the release has finished.
 const SUSTAIN_DRAW = 1.5
 
 export interface EnvelopePosition {
@@ -36,7 +52,8 @@ export interface EnvelopePosition {
   level: number
 }
 
-function heldLevel(e: Envelope, s: number) {
+// The level `s` seconds after key down, while the key is held.
+export function heldLevel(e: Envelope, s: number) {
   if (s < e.attack) return s / e.attack
   if (s < e.attack + e.decay) return 1 - (1 - e.sustain) * (s - e.attack) / e.decay
   return e.sustain
@@ -46,7 +63,7 @@ export function envelopeAt(e: Envelope, onAt: number, offAt: number | null, t: n
   if (offAt !== null && t >= offAt) {
     const progress = (t - offAt) / e.release
     if (progress >= 1) return null
-    return { phase: 'release', progress, level: heldLevel(e, offAt - onAt) * (1 - progress) }
+    return { phase: 'release', progress, level: heldLevel(e, offAt - onAt) * Math.exp(-GLIDE * progress) }
   }
   const s = Math.max(0, t - onAt)
   const level = heldLevel(e, s)
