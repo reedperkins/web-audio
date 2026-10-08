@@ -9,6 +9,8 @@ import {
 } from '../audio/filter'
 import { pressKey, releaseKey } from '../audio/input'
 import { mtof } from '../audio/mtof'
+import type { FilterPreset } from '../audio/presets'
+import { filterPresets } from '../audio/presets'
 import { playInto, releaseAll, stopPlayingInto, wave } from '../audio/synth'
 import { useDemo, vNoFocus } from '../audio/useDemo'
 import type { Harmonic } from './FilterResponse.vue'
@@ -19,9 +21,11 @@ import type { Harmonic } from './FilterResponse.vue'
 // resonance. From step `envAt`, the filter's own envelope appears inside it,
 // in blue (its ADSR and how far it opens the cutoff); from step `wahAt`, an
 // LFO node above it (on/off and a rate). Room for both is kept on every step,
-// so nothing moves. Entering switches the synth to sawtooth so there's
-// something to carve. MIDI, the on-screen keys and the hold button play it;
-// letting go of an ADSR handle plays a note, or restarts the held one.
+// so nothing moves. The oscillator is always a sawtooth, so there's plenty to
+// carve. A presets node above it sets the filter, both envelopes and the LFO
+// at once. MIDI, the on-screen keys and the hold button play it; picking a
+// preset or letting go of an ADSR handle plays a note, or restarts the held
+// one.
 const props = withDefaults(defineProps<{ envAt?: number; wahAt?: number }>(), { envAt: 1, wahAt: 2 })
 
 const SOURCE = 'Filter demo'
@@ -41,7 +45,7 @@ const holding = ref(false)
 const wahEnabled = ref(false)
 
 const nodes = [
-  { key: 'osc', label: 'OscillatorNode', style: { width: '11rem' } },
+  { key: 'osc', label: 'OscillatorNode', style: { width: '11rem' }, aboveWire: false },
   { key: 'filter', label: 'BiquadFilterNode', style: { flex: 1, minWidth: 0 } },
   { key: 'amp', label: 'GainNode', style: { width: '12rem' } },
   { key: 'out', label: 'destination', style: { width: '7.5rem' } },
@@ -51,6 +55,7 @@ const waveModel = computed({
   get: () => wave.value,
   set: (type: OscillatorType) => (wave.value = type),
 })
+const SAW: OscillatorType[] = ['sawtooth']
 
 const envModel = computed({
   get: () => ({ ...env }),
@@ -168,6 +173,23 @@ function stopHold() {
   releaseKey(HOLD_NOTE, SOURCE)
 }
 
+function pick(preset: FilterPreset) {
+  const { cutoff, resonance, amount } = preset
+  Object.assign(filter, { cutoff, resonance, amount })
+  Object.assign(filterEnv, preset.filterEnv)
+  Object.assign(env, preset.env)
+  wahEnabled.value = preset.lfo !== null
+  if (preset.lfo !== null) wah.rate = preset.lfo
+  preview()
+}
+
+const ENV_KEYS = ['attack', 'decay', 'sustain', 'release'] as const
+const sameEnv = (a: Envelope, b: Envelope) => ENV_KEYS.every((k) => a[k] === b[k])
+const isCurrent = (p: FilterPreset) =>
+  p.cutoff === filter.cutoff && p.resonance === filter.resonance && p.amount === filter.amount
+  && sameEnv(p.filterEnv, filterEnv) && sameEnv(p.env, env)
+  && (p.lfo === null ? !wahEnabled.value : wahEnabled.value && p.lfo === wah.rate)
+
 const wahOn = computed(() => active.value && wahStep.value && wahEnabled.value)
 watch(wahOn, setWah)
 </script>
@@ -175,8 +197,25 @@ watch(wahOn, setWah)
 <template>
   <SignalChain class="filter-demo" :nodes="nodes">
     <template #osc>
-      <WaveShapes v-model="waveModel" class="waves" @pick="retrigger" />
+      <WaveShapes v-model="waveModel" :types="SAW" class="waves" @pick="retrigger" />
       <PlayButton class="hold" :playing="holding" @play="toggleHold">Hold A2</PlayButton>
+    </template>
+    <template #osc-above>
+      <div class="presets">
+        <div class="side-name">presets</div>
+        <div class="preset-grid">
+          <ToggleChip
+            v-for="preset in filterPresets"
+            :key="preset.name"
+            class="preset"
+            :on="isCurrent(preset)"
+            :title="preset.feel"
+            @click="pick(preset)"
+          >
+            {{ preset.name }}
+          </ToggleChip>
+        </div>
+      </div>
     </template>
     <template v-if="wahStep" #filter-above>
       <div class="side">
@@ -240,8 +279,24 @@ watch(wahOn, setWah)
 
 .waves {
   width: 100%;
-  /* Narrower tiles, so 'sawtooth' fits two to a row inside the padding. */
-  --shape-padding: 0.3rem 0.15rem 0.2rem;
+  --shape-columns: 1;
+}
+
+.presets {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.3rem;
+}
+
+.preset {
+  font-size: 0.6rem;
 }
 
 .hold {

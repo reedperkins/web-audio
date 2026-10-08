@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="T">
 import { vNoFocus } from '../audio/useDemo'
 
-// Shapes as buttons, two to a row, the current one lit:
+// Shapes as buttons, two to a row (`--shape-columns`), the current one lit:
 //   <ShapePicker v-model="wave" :options="[{ value, label, d }]" axis="middle" @pick="…" />
 // Each `d` is drawn in a 200 × 80 box. `axis` puts the dashed zero line
 // through the middle (a wave) or along the bottom (a fade). `pick` fires on
@@ -50,7 +50,7 @@ function pick(value: T) {
 /* PLACEHOLDER(refine): shape picker look */
 .shape-picker {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(var(--shape-columns, 2), 1fr);
   gap: 0.4rem;
 }
 

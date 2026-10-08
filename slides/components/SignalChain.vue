@@ -11,7 +11,12 @@ import type { StyleValue } from 'vue'
 // for nodes that hold whole panels. `--node-padding` sets the padding.
 // A `<key>-above` slot draws a node above that one, with a wire down into it
 // (e.g. an LFO into a param). It sits outside the layout, so leave room above.
-defineProps<{ nodes: { key: string; label: string; style?: StyleValue }[]; stretch?: boolean }>()
+// `aboveWire: false` on a node drops that wire, for a panel that isn't a
+// signal (e.g. presets).
+defineProps<{
+  nodes: { key: string; label: string; style?: StyleValue; aboveWire?: boolean }[]
+  stretch?: boolean
+}>()
 </script>
 
 <template>
@@ -25,7 +30,8 @@ defineProps<{ nodes: { key: string; label: string; style?: StyleValue }[]; stret
           <div class="node">
             <slot :name="`${node.key}-above`" />
           </div>
-          <span class="wire">↓</span>
+          <span v-if="node.aboveWire !== false" class="wire">↓</span>
+          <span v-else class="wire gap" aria-hidden="true">↓</span>
         </div>
       </div>
     </template>
@@ -82,6 +88,11 @@ defineProps<{ nodes: { key: string; label: string; style?: StyleValue }[]; stret
 
 .above > .wire {
   line-height: 1;
+}
+
+/* Holds the wire's space, so the panel sits where it would with one. */
+.above > .wire.gap {
+  visibility: hidden;
 }
 
 .node-label {

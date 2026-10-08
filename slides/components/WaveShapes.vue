@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 // The four built-in oscillator types, one period and a half each:
 // <WaveShapes v-model="wave" @pick="preview" />
-// `pick` fires on every click, even on the current one.
+// `pick` fires on every click, even on the current one. `types` limits it to
+// some of them, in this order.
+const props = defineProps<{ types?: OscillatorType[] }>()
 const model = defineModel<OscillatorType>({ required: true })
 defineEmits<{ pick: [type: OscillatorType] }>()
 
@@ -18,12 +22,13 @@ function sine() {
   return d
 }
 
-const options: { value: OscillatorType; label: string; d: string }[] = [
+const all: { value: OscillatorType; label: string; d: string }[] = [
   { value: 'sine', label: "'sine'", d: sine() },
   { value: 'square', label: "'square'", d: `M0 ${h} V0 H50 V${h} H100 V0 H150 V${h} H200` },
   { value: 'sawtooth', label: "'sawtooth'", d: `M0 ${h} L66.7 0 V${h} L133.3 0 V${h} L200 0` },
   { value: 'triangle', label: "'triangle'", d: `M0 ${h / 2} L25 0 L75 ${h} L125 0 L175 ${h} L200 ${h / 2}` },
 ]
+const options = computed(() => props.types ? props.types.map((t) => all.find((o) => o.value === t)!) : all)
 </script>
 
 <template>
