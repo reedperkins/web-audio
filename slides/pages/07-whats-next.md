@@ -229,3 +229,40 @@
   font-weight: 700;
 }
 </style>
+
+---
+
+# Speaking of agentic tooling...
+
+```bash
+claude mcp add --transport http mdn https://mcp.mdn.mozilla.net/
+```
+
+```md
+<!-- .claude/skills/check-mdn/SKILL.md -->
+---
+name: check-mdn
+description: Look up browser APIs on MDN before using them.
+---
+
+1. `mcp__mdn__search` finds the pages.
+2. `mcp__mdn__get-doc` reads one: signatures, params, examples.
+
+Use current APIs only. Flag anything deprecated or experimental.
+```
+
+<p class="stolen">Technique shamelessly stolen from <a v-no-focus href="https://chrispennington.dev/blog/css-your-agent-wont-write-utahjs-2026" target="_blank">chrispennington.dev/blog/css-your-agent-wont-write-utahjs-2026</a></p>
+
+<style>
+.stolen {
+  margin-top: 0.75rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.stolen a {
+  border: 0;
+  color: var(--muted);
+}
+</style>
