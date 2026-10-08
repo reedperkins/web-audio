@@ -11,10 +11,13 @@ import type { StyleValue } from 'vue'
 // for nodes that hold whole panels. `--node-padding` sets the padding.
 // A `<key>-above` slot draws a node above that one, with a wire down into it
 // (e.g. an LFO into a param). It sits outside the layout, so leave room above.
+// A `<key>-above-source` slot draws another node left of the above one, wired
+// into it (e.g. an LFO into its depth). The above node stays centered.
+// `sourceWire` replaces that wire's arrow, e.g. with × for a multiplication.
 // `aboveWire: false` on a node drops that wire, for a panel that isn't a
 // signal (e.g. presets).
 defineProps<{
-  nodes: { key: string; label: string; style?: StyleValue; aboveWire?: boolean }[]
+  nodes: { key: string; label: string; style?: StyleValue; aboveWire?: boolean; sourceWire?: string }[]
   stretch?: boolean
 }>()
 </script>
@@ -29,6 +32,12 @@ defineProps<{
         <div v-if="$slots[`${node.key}-above`]" class="above">
           <div class="node">
             <slot :name="`${node.key}-above`" />
+            <div v-if="$slots[`${node.key}-above-source`]" class="source">
+              <div class="node">
+                <slot :name="`${node.key}-above-source`" />
+              </div>
+              <span class="wire">{{ node.sourceWire ?? '→' }}</span>
+            </div>
           </div>
           <span v-if="node.aboveWire !== false" class="wire">↓</span>
           <span v-else class="wire gap" aria-hidden="true">↓</span>
@@ -83,6 +92,22 @@ defineProps<{
 }
 
 .above > .node {
+  padding: 0.3rem 0.8rem;
+}
+
+.source {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  translate: 0 -50%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  /* The chain's gap, plus the border the absolute position starts inside. */
+  margin-right: calc(0.75rem + 2px);
+}
+
+.source > .node {
   padding: 0.3rem 0.8rem;
 }
 

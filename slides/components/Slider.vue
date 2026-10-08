@@ -6,6 +6,7 @@ import { vNoFocus } from '../audio/useDemo'
 // `--slider-value-width` (room for the readout, so it doesn't jump).
 // `--slider-color` colors the track (default `--accent`).
 // `format` replaces the readout's text, e.g. to show Hz for a log position.
+// `readonly` shows a value that moves on its own; it can't be dragged.
 const value = defineModel<number>({ required: true })
 withDefaults(
   defineProps<{
@@ -15,6 +16,7 @@ withDefaults(
     step?: number
     digits?: number
     format?: (value: number) => string
+    readonly?: boolean
   }>(),
   {
     min: 0,
@@ -27,7 +29,7 @@ withDefaults(
 </script>
 
 <template>
-  <label class="slider">
+  <label class="slider" :class="{ readonly }">
     <span v-if="label" class="slider-label">{{ label }}</span>
     <input
       v-model.number="value"
@@ -63,6 +65,10 @@ input {
   width: var(--slider-width, 9em);
   accent-color: var(--slider-color, var(--accent));
   cursor: pointer;
+}
+
+.readonly input {
+  pointer-events: none;
 }
 
 .slider-value {

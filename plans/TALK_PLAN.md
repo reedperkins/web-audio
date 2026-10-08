@@ -38,7 +38,7 @@ Status: DRAFT. `TODO` marks places where I need to decide something.
 | 2 | One beep | `BeepDemo` | one oscillator for 1 s | play button under the code |
 | 2 | The audio clock | `ClockDemo` | four scheduled oscillators | timeline of the note start times, playhead following `ctx.currentTime` |
 | 3 | Too loud | `ClipDemo` | four oscillators, no gain | four sines, their sum crossing ±1, and the clipped flat tops (drawn from the math) |
-| 3 | Turn it down / AudioParams | `VolumeDemo` | oscillators → `GainNode` → out; on the LFO step a 2 Hz sine (× 0.05) into `gain` | signal chain osc → gain → out, with play button and a volume slider on the gain node (`setTargetAtTime`); on the LFO step an LFO node with an on/off checkbox above the gain node, and the slider follows the live gain |
+| 3 | Turn it down / AudioParams | `VolumeDemo` | oscillators → `GainNode` → out; the slider sets `gain.value`, then `setTargetAtTime`; on the LFO step a 2 Hz sine (× 0.05) into `gain` | signal chain osc → gain → out, with play button and a volume slider on the gain node; on the LFO step an LFO node × an `lfoDepth` node above the gain node, and the gain node shows base + LFO = live gain |
 | 4 | Click. | `ClickDemo` | an instant start/stop, and the same tone with a short ramp | zoomed waveform of the first few ms: a cliff vs. a ramp |
 | 4 | Shape over time | `AdsrDemo` | plays a note when a handle or preset card is let go; hold the button or Enter to play | drag-and-drop ADSR editor with a playhead, plus a row of preset cards (A/D/S/R as bars); edits the shared synth's envelope |
 | 4 | Scheduled gain | `AdsrDemo` (small) | play button | ADSR curve highlighting the segment that matches the current step |
@@ -148,18 +148,25 @@ Code on slides is written to teach: short and plain, no imports, cleanup or erro
   const volume = new GainNode(ctx, { gain: 0.2 })
   osc.connect(volume).connect(ctx.destination)
   ```
-- **3c A knob (`VolumeDemo`):** the same demo; the slider uses `setTargetAtTime`, so it moves smoothly without clicks.
-  - **Say:** "Settings like `gain` aren't plain numbers. They're `AudioParam`s, which you can schedule and smooth over time."
-- **3d An LFO (`VolumeDemo`, last step of the 3c slide):** the code morphs into a 2 Hz sine through a `GainNode` at 0.05, connected into `volume.gain`, with `setVolume(0.15)` setting the base. The gain swings between 0.1 and 0.2. An LFO node with a checkbox appears above the gain node, and the slider moves with the live gain.
+- **3c Setting a parameter (`VolumeDemo jump`):** the chord through a `GainNode`, with a gain slider (0–0.2) that sets `gain.value` directly. Drag fast and the level steps.
+  ```js
+  function setVolume(value) {
+    volume.gain.value = value
+  }
+  ```
+  - **Say:** "`gain` isn't a plain number. It's an `AudioParam`: a value on the audio clock that you can schedule, or drive with another signal. Setting `.value` jumps straight there."
+- **3d Automating it (`VolumeDemo`):** the same function with `setTargetAtTime`, so the slider glides without clicks.
+  - **Say:** "Same knob, but schedule the change instead of jumping."
+- **3e An LFO (`VolumeDemo`, later steps of the 3d slide):** the code morphs into a 2 Hz sine through a `GainNode` at 0.05 (`lfoDepth`), connected into `volume.gain`, with `setVolume(0.15)` setting the base. The gain swings between 0.1 and 0.2. Above the chain: an LFO node (on/off checkbox, a read-only fader showing its −1…+1 value) × an `lfoDepth` node (0.05), wired down into the gain node, which shows the sum live: `gain 0.15 + 0.04 = 0.19`.
   ```js
   const lfo = new OscillatorNode(ctx)
   lfo.frequency.value = 2
-  const depth = new GainNode(ctx, { gain: 0.05 })
+  const lfoDepth = new GainNode(ctx, { gain: 0.05 })
   setVolume(0.15)
-  lfo.connect(depth).connect(volume.gain)
+  lfo.connect(lfoDepth).connect(volume.gain)
   lfo.start()
   ```
-  - **Say:** "Connect a node into an `AudioParam` and its signal adds to the value. A slow sine wave turns the knob for you."
+  - **Say:** "An oscillator swings ±1, far too much for a gain, so `lfoDepth` multiplies it down to ±0.05. Connect a node into an `AudioParam` and its signal adds to the value."
 - **Note:** the master volume stays at 1.0 so the clipping is real. Loudness is set on the laptop or PA.
 
 ### 4. Envelope (about 3.5 min)
@@ -227,7 +234,7 @@ All of these play the shared synth.
   2. **The filter's own envelope** (click 1): a second ADSR inside the filter node, framed in blue ("filter envelope"), with an amount slider (how far it opens, up to 4 octaves). Its ramps go to `filter.detune`, in cents: a straight ramp in cents is an even sweep to the ear. It holds at `amount × sustain` while the key is down, so the amount slider moves held notes, and falls back over its release. Letting go of either ADSR's handle plays a note (or restarts the held one).
      - **Say:** "Same idea as our volume envelope, aimed at a different knob. Envelopes aren't just for volume: anything that's an `AudioParam` can move over time."
      - Short decay, low sustain on a low note: the classic synth-bass "wow". A slow attack: the sound brightens as it swells.
-  3. **An LFO on the cutoff** (click 2): 3d's LFO connected into `filter.detune` instead of `volume.gain`. A slow sine on the cutoff is a wah. A small node above the filter, wired into it, with an on/off box and a rate slider (no `detune` label: the param is an implementation detail); depth fixed at 1 octave. It stops on leaving the slide.
+  3. **An LFO on the cutoff** (click 2): 3e's LFO connected into `filter.detune` instead of `volume.gain`. A slow sine on the cutoff is a wah. A small node above the filter, wired into it, with an on/off box and a rate slider (no `detune` label: the param is an implementation detail); depth fixed at 1 octave. It stops on leaving the slide.
   - `TODO` the default cutoff, resonance, amount and filter ADSR (tune by ear), and filter values for each song preset.
   - Before this slide the filter is wide open (cutoff at Nyquist, where a lowpass passes everything exactly; amount 0), so earlier slides sound as they do now. After it, the settings carry forward to the hub.
   - Resonance tops out at 15 dB: past that, a cutoff sitting on a chord's fundamentals can clip.
