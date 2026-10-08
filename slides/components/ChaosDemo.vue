@@ -1,24 +1,26 @@
 <script setup lang="ts">
 import { computed, reactive, ref, toRaw, watch } from 'vue'
 import { ctx, unlock } from '../audio/audio'
-import type { Chaos, ChaosStats, KeysMode, PadMode } from '../audio/chaos'
+import type { Chaos, ChaosStats, FilterEnvelope, KnobName, KeysMode, PadMode } from '../audio/chaos'
 import {
   CLEAR_PAD,
   createChaos,
   densityOf,
-  KNOBS,
+  knobsFor,
   PAD_CHANNEL,
   PADS,
   sizeOf,
   START,
   START_ENVELOPE,
+  START_FILTER_ENVELOPE,
+  MAX_FILTER_AMOUNT,
   TRACK_PADS,
 } from '../audio/chaos'
 import type { Envelope } from '../audio/envelope'
 import { onControl, onNote, pressKey, releaseKey } from '../audio/input'
 import { addRecording, load, sample, samples } from '../audio/samples'
 import type { Tape } from '../audio/tape'
-import { createTape, newTracks } from '../audio/tape'
+import { createTape, MAX_VOLUME, newTracks } from '../audio/tape'
 import { useDemo } from '../audio/useDemo'
 
 // The "Chaos" slide. Keys play the swarm, pads mangle a recording, knobs K1–K8
@@ -35,6 +37,14 @@ import { useDemo } from '../audio/useDemo'
 const knobs = reactive({ ...START })
 // The keys' envelope; every new note reads it.
 const envelope = reactive<Envelope>({ ...START_ENVELOPE })
+// Each key's filter envelope and how far it opens: mouse only, as K1–K8 are
+// all taken.
+const filterEnvelope = reactive<FilterEnvelope>({ ...START_FILTER_ENVELOPE })
+const filterEnvModel = computed({
+  get: () => ({ ...filterEnvelope }),
+  set: (value: Envelope) => Object.assign(filterEnvelope, value),
+})
+const octaves = (cents: number) => `${(cents / 1200).toFixed(1)} oct`
 const envModel = computed({
   get: () => ({ ...envelope }),
   set: (value: Envelope) => Object.assign(envelope, value),
@@ -51,6 +61,34 @@ const active = ref(false)
 // What the keys play: the oscillator swarm or grains of the take. The
 // "keys" pad flips it; it stays as it was when the slide is left.
 const keysMode = ref<KeysMode>('osc')
+
+// What K1–K8 do right now: K6 and K7 are the swarm's filter in osc mode, and
+// grain and scatter in voice mode (see audio/chaos.ts).
+const layout = computed(() => knobsFor(keysMode.value))
+
+// Pickup. The MPK's knobs are absolute, so after a mode switch K6 and K7 sit
+// wherever they were left. Their new settings wait until the physical knob
+// comes within PICKUP of the current value, or crosses it; then it takes over
+// and nothing jumps.
+const PICKUP = 0.03
+const waiting = new Set<KnobName>()
+const lastTurn = new Map<number, number>()
+watch(keysMode, (mode, was) => {
+  const before = knobsFor(was)
+  for (const k of knobsFor(mode)) if (before.find((b) => b.cc === k.cc)?.name !== k.name) waiting.add(k.name)
+})
+
+function turn(name: KnobName, cc: number, value: number) {
+  const last = lastTurn.get(cc)
+  lastTurn.set(cc, value)
+  if (waiting.has(name)) {
+    const current = knobs[name]
+    const crossed = last !== undefined && (last - current) * (value - current) <= 0
+    if (!crossed && Math.abs(value - current) > PICKUP) return
+    waiting.delete(name)
+  }
+  knobs[name] = value
+}
 
 let chaos: Chaos | null = null
 let stops: (() => void)[] = []
@@ -70,7 +108,7 @@ const { out } = useDemo({
     bus.connect(out.value)
     // The engine reads these on every note and grain, outside any effect, so
     // it gets the plain objects. The proxies above still write to them.
-    chaos = createChaos(live, toRaw(knobs), toRaw(envelope))
+    chaos = createChaos(live, toRaw(knobs), toRaw(envelope), toRaw(filterEnvelope))
     chaos.setKeys(keysMode.value)
     const engine = chaos.stats
     poll = setInterval(() => Object.assign(stats, engine), 100)
@@ -94,8 +132,8 @@ const { out } = useDemo({
       }),
       onControl({
         control(cc, value) {
-          const knob = KNOBS.find((k) => k.cc === cc)
-          if (knob) knobs[knob.name] = value / 127
+          const knob = layout.value.find((k) => k.cc === cc)
+          if (knob) turn(knob.name, cc, value / 127)
           // The joystick's up sends CC 1 too, the same as K1.
           if (cc === 1) joystick.y = value / 127
         },
@@ -170,7 +208,8 @@ function clickPad(note: number) {
   unlock()
   padOn(note, 110)
 }
-const setKnob = (i: number, value: number) => (knobs[KNOBS[i].name] = value)
+// The mouse sets a knob outright; the physical knob still picks up later.
+const setKnob = (i: number, value: number) => (knobs[layout.value[i].name] = value)
 
 // Back to hold stops whatever is latched.
 function toggleLatch() {
@@ -186,7 +225,7 @@ function toggleLatch() {
 }
 
 const knobList = computed(() =>
-  KNOBS.map((k) => ({ label: k.label, value: knobs[k.name], accent: k.name === 'resolve' })),
+  layout.value.map((k) => ({ label: k.label, value: knobs[k.name], accent: k.name === 'resolve' })),
 )
 const padList = computed(() =>
   PADS.map((p) => ({
@@ -376,6 +415,13 @@ function onKeyUp(e: KeyboardEvent) {
   if (i >= 0) trackOff(i)
 }
 
+// Each loop's level, by mouse: 100% is as printed.
+const percent = (v: number) => `${Math.round(v * 100)}%`
+function setVolume(i: number, volume: number) {
+  if (tape) tape.setVolume(i, volume)
+  else tracks[i].volume = volume
+}
+
 function trackLabel(i: number) {
   const { state } = tracks[i]
   if (state === 'empty') return 'print'
@@ -412,16 +458,30 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
 
 <template>
   <div class="chaos">
-    <div class="chaos-count">
-      <span class="chaos-number">{{ count }}</span>
-      <span class="chaos-unit">{{ voice ? 'grains' : 'oscillators' }}</span>
-      <span class="chaos-sub">{{ perKey }} per key</span>
-    </div>
     <div class="chaos-scope">
       <Scope :analyser="analyser" :active="active" />
+      <span class="chaos-count">
+        <b>{{ count }}</b> {{ voice ? 'grains' : 'oscillators' }} · {{ perKey }} per key
+      </span>
     </div>
-    <div class="chaos-adsr">
-      <AdsrEditor v-model="envModel" compact />
+    <div class="chaos-env amp-env">
+      <div class="chaos-env-head">
+        <span class="chaos-env-name">volume envelope</span>
+      </div>
+      <AdsrEditor v-model="envModel" class="chaos-env-adsr" compact />
+    </div>
+    <div class="chaos-env filter-env">
+      <div class="chaos-env-head">
+        <span class="chaos-env-name">filter envelope</span>
+        <Slider
+          v-model="filterEnvelope.amount"
+          class="chaos-amount"
+          :max="MAX_FILTER_AMOUNT"
+          :step="100"
+          :format="octaves"
+        />
+      </div>
+      <AdsrEditor v-model="filterEnvModel" class="chaos-env-adsr" compact />
     </div>
     <div class="chaos-take" :class="{ rec: recording }">
       <BufferView class="chaos-wave" :buffer="source.buffer" :version="source.version" />
@@ -433,25 +493,36 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
         <span>looper</span>
         <span class="chaos-loop-length">{{ loopLength ? `${loopLength.toFixed(2)} s` : 'no loop' }}</span>
       </div>
-      <div
-        v-for="(track, i) in tracks"
-        :key="i"
-        class="chaos-track"
-        :class="track.state"
-        @pointerdown="trackOn(i)"
-        @pointerup="trackOff(i)"
-        @pointerleave="trackOff(i)"
-        @pointercancel="trackOff(i)"
-      >
-        <BufferView
-          v-if="track.buffer"
-          class="chaos-wave"
-          :buffer="track.buffer"
-          :position="phases[i] == null ? null : phases[i]! * track.buffer.duration"
+      <div v-for="(track, i) in tracks" :key="i" class="chaos-lane">
+        <div
+          class="chaos-track"
+          :class="track.state"
+          @pointerdown="trackOn(i)"
+          @pointerup="trackOff(i)"
+          @pointerleave="trackOff(i)"
+          @pointercancel="trackOff(i)"
+        >
+          <BufferView
+            v-if="track.buffer"
+            class="chaos-wave"
+            :buffer="track.buffer"
+            :position="phases[i] == null ? null : phases[i]! * track.buffer.duration"
+          />
+          <div v-else-if="track.state === 'recording'" class="chaos-fill" :style="{ width: `${trackFill(i) * 100}%` }" />
+          <span class="chaos-track-number">{{ i + 1 }}</span>
+          <span class="chaos-track-label">{{ trackLabel(i) }}</span>
+        </div>
+        <!-- The loop's volume, beside its tile; hidden but holding its space
+             until there's a loop. -->
+        <Fader
+          class="chaos-volume"
+          :class="{ hidden: !track.buffer }"
+          :model-value="track.volume"
+          :max="MAX_VOLUME"
+          :mark="1"
+          :format="percent"
+          @update:model-value="(v: number) => setVolume(i, v)"
         />
-        <div v-else-if="track.state === 'recording'" class="chaos-fill" :style="{ width: `${trackFill(i) * 100}%` }" />
-        <span class="chaos-track-number">{{ i + 1 }}</span>
-        <span class="chaos-track-label">{{ trackLabel(i) }}</span>
       </div>
     </div>
     <MpkMini
@@ -476,59 +547,97 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
 /* PLACEHOLDER(refine): chaos slide look */
 .chaos {
   display: grid;
-  grid-template-columns: auto 1fr 15rem 12rem;
+  grid-template-columns: minmax(0, 1fr) 13rem 13rem 12rem;
   grid-template-areas:
-    'count scope adsr take'
+    'scope adsr fadsr take'
     'tracks tracks tracks tracks'
     'mpk mpk mpk mpk';
   gap: 0.6rem 1rem;
 }
 
-.chaos-count {
-  grid-area: count;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 10rem;
-}
-
-.chaos-number {
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: var(--size-title);
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
-.chaos-unit {
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: var(--size-small);
-}
-
-.chaos-sub {
-  margin-top: 0.3rem;
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-}
-
 .chaos-scope {
   position: relative;
   grid-area: scope;
-  height: 5rem;
+  height: 6rem;
   border-radius: 0.4rem;
   background: var(--surface);
 }
 
-.chaos-adsr {
-  grid-area: adsr;
+/* The count, small, over the scope. */
+.chaos-count {
+  position: absolute;
+  top: 0.3rem;
+  left: 0.5rem;
+  z-index: 1;
+  padding: 0 0.3rem;
+  border-radius: 0.3rem;
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.chaos-count b {
+  color: var(--accent);
+}
+
+/* The two envelopes, each framed in its color, as on the filter slide. */
+.chaos-env {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  height: 5rem;
+  height: 6rem;
+  padding: 0.25rem 0.4rem 0.15rem;
+  border: 2px solid var(--env-color);
   border-radius: 0.4rem;
   background: var(--surface);
+  --adsr-color: var(--env-color);
+}
+
+.amp-env {
+  grid-area: adsr;
+  --env-color: var(--accent);
+}
+
+.filter-env {
+  grid-area: fadsr;
+  --env-color: var(--filter);
+}
+
+/* The curve takes whatever height the label and slider leave; it keeps its
+   shape and shrinks to fit. */
+.chaos-env-adsr {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+.chaos-env-name {
+  color: var(--env-color);
+  font-family: var(--font-body);
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Each envelope's header line: its name, and for the filter how far it
+   opens. Both the same height, so the two curves match. */
+.chaos-env-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  width: 100%;
+  min-height: 1.4rem;
+}
+
+.chaos-amount {
+  gap: 0.3em;
+  font-size: 0.5rem;
+  --slider-color: var(--filter);
+  --slider-width: 3.5rem;
+  --slider-value-width: 6ch;
 }
 
 /* The picture fills the tile; labels sit on top of it, all in one grid cell,
@@ -554,7 +663,7 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
 
 .chaos-take {
   grid-area: take;
-  height: 5rem;
+  height: 6rem;
   border: 2px solid transparent;
   border-radius: 0.4rem;
   background: var(--surface);
@@ -589,7 +698,7 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
   grid-area: tracks;
   display: grid;
   /* minmax: a waveform's canvas mustn't size its column. */
-  grid-template-columns: 10rem repeat(4, minmax(0, 1fr));
+  grid-template-columns: 4rem repeat(4, minmax(0, 1fr));
   min-width: 0;
   gap: 0.6rem;
   height: 2.6rem;
@@ -601,13 +710,38 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
   justify-content: center;
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: var(--size-small);
-  line-height: 1.2;
+  font-size: 0.6rem;
+  line-height: 1.3;
 }
 
 .chaos-loop-length {
   color: var(--muted);
-  font-size: 0.6rem;
+  font-size: 0.5rem;
+}
+
+/* A track: its tile, then its volume fader. */
+.chaos-lane {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 0;
+  /* Pinned, or a waveform's canvas would grow the row. */
+  height: 2.6rem;
+}
+
+.chaos-lane .chaos-track {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+}
+
+.chaos-volume {
+  align-self: stretch;
+  width: 0.9rem;
+}
+
+.chaos-volume.hidden {
+  visibility: hidden;
 }
 
 .chaos-track {

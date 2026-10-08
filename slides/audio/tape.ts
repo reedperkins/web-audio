@@ -14,17 +14,23 @@ import workletUrl from './tape.worklet.js?url'
 // One control per track, acting on press: an empty track starts a take, a
 // recording track ends it and starts looping, a playing track mutes and a
 // muted one unmutes. Clearing is its own call (the slide does it on a hold).
+// Each track also has its own volume, set with `setVolume`.
 
 export type TrackState = 'empty' | 'armed' | 'recording' | 'playing' | 'muted'
 
-// `state` and `buffer` are for the slide; it passes in a reactive array.
+// `state`, `buffer` and `volume` are for the slide; it passes in a reactive
+// array. `volume` is the loop's level, 1 as printed.
 export interface Track {
   state: TrackState
   buffer: AudioBuffer | null
+  volume: number
 }
 
+export const MAX_VOLUME = 1.5
+
 export const TRACK_COUNT = 4
-export const newTracks = (): Track[] => Array.from({ length: TRACK_COUNT }, () => ({ state: 'empty', buffer: null }))
+export const newTracks = (): Track[] =>
+  Array.from({ length: TRACK_COUNT }, () => ({ state: 'empty', buffer: null, volume: 1 }))
 
 // The longest take, in seconds. A take still going then ends on its own.
 const MAX_TAKE = 60
@@ -64,8 +70,10 @@ export async function createTape(tracks: Track[], out: AudioNode) {
   }
 
   // Per track, what the slide doesn't need to see. Frames throughout.
+  // `gain` fades for mutes and clears; `volume`, after it, is the slider's.
   interface Deck {
     gain: GainNode
+    volume: GainNode
     source: AudioBufferSourceNode | null
     // The take's id while it's armed or recording.
     take: number | null
@@ -76,10 +84,11 @@ export async function createTape(tracks: Track[], out: AudioNode) {
     // When the buffer's first sample plays (or would).
     anchor: number
   }
-  const decks: Deck[] = tracks.map(() => {
+  const decks: Deck[] = tracks.map((track) => {
     const gain = new GainNode(ctx)
-    gain.connect(out)
-    return { gain, source: null, take: null, start: 0, stop: null, delay: 0, anchor: 0 }
+    const volume = new GainNode(ctx, { gain: track.volume })
+    gain.connect(volume).connect(out)
+    return { gain, volume, source: null, take: null, start: 0, stop: null, delay: 0, anchor: 0 }
   })
   let nextId = 0
 
@@ -171,8 +180,15 @@ export async function createTape(tracks: Track[], out: AudioNode) {
     }
   }
 
+  function setVolume(i: number, volume: number) {
+    tracks[i].volume = volume
+    decks[i].volume.gain.setTargetAtTime(volume, ctx.currentTime, FADE)
+  }
+
+  // A cleared track starts its next take at full volume.
   function clear(i: number) {
     const deck = decks[i]
+    setVolume(i, 1)
     tracks[i].buffer = null
     cancel(i)
     tracks[i].state = 'empty'
@@ -233,7 +249,7 @@ export async function createTape(tracks: Track[], out: AudioNode) {
   }
   const loopLength = () => (loop ? timeAt(loop.length) : null)
 
-  return { input, tap, clear, start, stop, phase, elapsed, loopLength }
+  return { input, tap, clear, setVolume, start, stop, phase, elapsed, loopLength }
 }
 
 export type Tape = Awaited<ReturnType<typeof createTape>>

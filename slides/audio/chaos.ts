@@ -24,6 +24,10 @@ import { mtof } from './mtof'
 // The MPK mini mk2 as it's set up. Knobs K1–K8 send CC 1–8; the joystick sends
 // pitch bend left/right and CC 1 (the same as K1) up; the pads send notes
 // 44–51 on channel 10, top row 48–51.
+//
+// K6 and K7 depend on what the keys play. In voice mode they're grain and
+// scatter (which the pads use too). In osc mode the keys don't use those, so
+// K6 and K7 become the swarm's filter: cutoff and resonance.
 export const PAD_CHANNEL = 10
 
 export interface Knobs {
@@ -35,11 +39,19 @@ export interface Knobs {
   grain: number
   scatter: number
   crush: number
+  cutoff: number
+  resonance: number
 }
 export type KnobName = keyof Knobs
 
+export interface KnobSlot {
+  name: KnobName
+  label: string
+  cc: number
+}
+
 // Knob order is K1–K8, CC 1–8. Every value is 0–1.
-export const KNOBS: { name: KnobName; label: string; cc: number }[] = [
+const VOICE_KNOBS: KnobSlot[] = [
   { name: 'resolve', label: 'resolve', cc: 1 },
   { name: 'spread', label: 'spread', cc: 2 },
   { name: 'drift', label: 'drift', cc: 3 },
@@ -49,6 +61,13 @@ export const KNOBS: { name: KnobName; label: string; cc: number }[] = [
   { name: 'scatter', label: 'scatter', cc: 7 },
   { name: 'crush', label: 'crush', cc: 8 },
 ]
+const OSC_KNOBS: KnobSlot[] = VOICE_KNOBS.map((k) =>
+  k.cc === 6 ? { name: 'cutoff', label: 'cutoff', cc: 6 }
+  : k.cc === 7 ? { name: 'resonance', label: 'resonance', cc: 7 }
+  : k,
+)
+// What K1–K8 do while the keys play `mode`.
+export const knobsFor = (mode: KeysMode) => (mode === 'osc' ? OSC_KNOBS : VOICE_KNOBS)
 
 // PLACEHOLDER(refine): starting knob positions
 export const START: Knobs = {
@@ -60,6 +79,9 @@ export const START: Knobs = {
   grain: 0.35,
   scatter: 0.2,
   crush: 0,
+  // About 6 kHz: a little off the top, like the fixed tone filter before it.
+  cutoff: 0.8,
+  resonance: 0,
 }
 
 export type KeysMode = 'osc' | 'voice'
@@ -98,10 +120,30 @@ const MAX_OSCILLATORS = 2400
 const MAX_SPREAD = 2400
 const MAX_DRIFT = 700
 const BEND = 1200
-const TONE = 6000
+// The swarm's lowpass. Resonance stays modest: a sharp peak swept across a
+// thousand saws would pump the limiter.
+const CUTOFF = { min: 80, max: 18000 }
+const MAX_RESONANCE = 10
 // The keys' own envelope, edited on the slide. Its own, not the deck's
 // shared one, so a wild setting here doesn't follow the synth to the finale.
 export const START_ENVELOPE: Envelope = { attack: 0.08, decay: 0.3, sustain: 0.8, release: 0.6 }
+
+// Each key's filter envelope, edited with the mouse: its shape opens the
+// key's cutoff by up to `amount` cents above K6's setting.
+export interface FilterEnvelope extends Envelope {
+  amount: number
+}
+// PLACEHOLDER(refine): filter envelope start. Amount 0 keeps the swarm
+// sounding as it did until the slider is moved.
+export const START_FILTER_ENVELOPE: FilterEnvelope = { attack: 0.01, decay: 0.4, sustain: 0.3, release: 0.5, amount: 0 }
+export const MAX_FILTER_AMOUNT = 4800
+
+// An envelope's level (0–1) `s` seconds after key down, while held.
+function heldLevel(e: Envelope, s: number) {
+  if (s < e.attack) return s / e.attack
+  if (s < e.attack + e.decay) return 1 - (1 - e.sustain) * (s - e.attack) / e.decay
+  return e.sustain
+}
 const DRIFTS = 8
 const SMOOTH = 0.03
 
@@ -114,6 +156,9 @@ export const grainOf = (k: number) => 0.015 * 2 ** (k * 5)
 // Voice mode: grains per second on each key.
 export const densityOf = (k: number) => Math.round(15 * 2 ** (k * 3))
 export const stepsOf = (k: number) => Math.round(2 ** (1 + 5 * (1 - k)))
+// In octaves, so each bit of travel sounds the same.
+export const cutoffOf = (k: number) => CUTOFF.min * (CUTOFF.max / CUTOFF.min) ** k
+export const resonanceOf = (k: number) => MAX_RESONANCE * k
 
 // The grain fade: a Hann window.
 const HANN = Float32Array.from({ length: 129 }, (_, i) => Math.sin((Math.PI * i) / 128) ** 2)
@@ -159,7 +204,7 @@ const MIN_HOP = 0.008
 
 // `stats` is a plain object, counted on every grain; the slide polls it
 // rather than making it reactive.
-export function createChaos(out: AudioNode, knobs: Knobs, envelope: Envelope, tap?: AudioNode) {
+export function createChaos(out: AudioNode, knobs: Knobs, envelope: Envelope, filterEnvelope: FilterEnvelope, tap?: AudioNode) {
   const stats: ChaosStats = { oscillators: 0, grains: 0 }
   // Everything goes through a hard limiter last: a thousand saws or a pile of
   // grains can't blow the speakers.
@@ -177,10 +222,10 @@ export function createChaos(out: AudioNode, knobs: Knobs, envelope: Envelope, ta
   mix.connect(drive).connect(shaper).connect(wet).connect(limiter)
 
   // The swarm into `wild`, the pure sines into `calm`; resolve fades between.
-  const tone = new BiquadFilterNode(ctx, { type: 'lowpass', frequency: TONE })
+  // Each key's swarm has its own lowpass on the way (see `swarm`).
   const wild = new GainNode(ctx)
   const calm = new GainNode(ctx, { gain: 0 })
-  wild.connect(tone).connect(mix)
+  wild.connect(mix)
   calm.connect(mix)
   const grainBus = new GainNode(ctx, { gain: GRAIN_LEVEL })
   grainBus.connect(mix)
@@ -195,6 +240,9 @@ export function createChaos(out: AudioNode, knobs: Knobs, envelope: Envelope, ta
   for (const source of [spread, bend, ...lfos]) source.start()
   stats.oscillators = DRIFTS
 
+  // Every key that's sounding (see `swarm`). Declared here, as `update` walks it.
+  const swarms = new Map<number, Swarm>()
+
   let steps = 0
   // Sets every shared source from the knobs. Cheap: only a dozen params,
   // however many oscillators are listening.
@@ -208,6 +256,10 @@ export function createChaos(out: AudioNode, knobs: Knobs, envelope: Envelope, ta
     lfos.forEach((lfo, i) => set(lfo.frequency, rateOf(knobs.rate) * ratios[i]))
     set(wild.gain, wildness)
     set(calm.gain, calmness)
+    for (const { filter } of swarms.values()) {
+      set(filter.frequency, cutoffOf(knobs.cutoff))
+      set(filter.Q, resonanceOf(knobs.resonance))
+    }
     const crushing = knobs.crush > 0.02
     set(dry.gain, crushing ? 0 : 1)
     set(wet.gain, crushing ? 1 : 0)
@@ -223,10 +275,13 @@ export function createChaos(out: AudioNode, knobs: Knobs, envelope: Envelope, ta
     oscs: OscillatorNode[]
     offsets: GainNode[]
     envs: GainNode[]
+    // The key's lowpass, and what its envelope was started with.
+    filter: BiquadFilterNode
+    at: number
+    shape: FilterEnvelope
     // Voice mode: the key's grain stream, in `streams`.
     cloud?: number
   }
-  const swarms = new Map<number, Swarm>()
   let keysMode: KeysMode = 'osc'
   // Voice clouds share `streams` with the pads, keyed past any MIDI note.
   const CLOUD = 1000
@@ -264,7 +319,18 @@ export function createChaos(out: AudioNode, knobs: Knobs, envelope: Envelope, ta
 
     const env = new GainNode(ctx, { gain: 0 })
     const pureEnv = new GainNode(ctx, { gain: 0 })
-    amp.connect(env).connect(wild)
+    // The key's lowpass: K6 and K7 set it; its envelope sweeps its detune, in
+    // cents, from the cutoff up by `amount` and back down to `sustain` of it.
+    const shape = { ...filterEnvelope }
+    const filter = new BiquadFilterNode(ctx, {
+      type: 'lowpass',
+      frequency: cutoffOf(knobs.cutoff),
+      Q: resonanceOf(knobs.resonance),
+    })
+    filter.detune.setValueAtTime(0, t)
+    filter.detune.linearRampToValueAtTime(shape.amount, t + shape.attack)
+    filter.detune.linearRampToValueAtTime(shape.amount * shape.sustain, t + shape.attack + shape.decay)
+    amp.connect(filter).connect(env).connect(wild)
     pure.connect(new GainNode(ctx, { gain: PURE_LEVEL * level })).connect(pureEnv).connect(calm)
     // The same ramps as noteOn on the envelope slides.
     const { attack, decay, sustain } = envelope
@@ -274,12 +340,13 @@ export function createChaos(out: AudioNode, knobs: Knobs, envelope: Envelope, ta
       e.gain.linearRampToValueAtTime(sustain, t + attack + decay)
     }
     stats.oscillators += oscs.length
-    if (!voice) return { oscs, offsets, envs: [env, pureEnv] }
+    const keys = { oscs, offsets, envs: [env, pureEnv], filter, at: t, shape }
+    if (!voice) return keys
 
     const cloud = CLOUD + note
     const start = source!.spots[0]
     startStream(cloud, { mode: 'voice', note, next: t + 0.01, pos: start, home: start, amp })
-    return { oscs, offsets, envs: [env, pureEnv], cloud }
+    return { ...keys, cloud }
   }
 
   function release(s: Swarm, fade: number) {
@@ -288,6 +355,13 @@ export function createChaos(out: AudioNode, knobs: Knobs, envelope: Envelope, ta
       e.gain.cancelAndHoldAtTime(t)
       e.gain.linearRampToValueAtTime(0, t + fade)
     }
+    // The filter falls back over its own release. cancelAndHoldAtTime only
+    // holds a value while a ramp is still running; past the decay it adds
+    // nothing, so the hold is set by hand.
+    const { detune } = s.filter
+    detune.cancelAndHoldAtTime(t)
+    detune.setValueAtTime(s.shape.amount * heldLevel(s.shape, t - s.at), t)
+    detune.linearRampToValueAtTime(0, t + s.shape.release)
     for (const osc of s.oscs) osc.stop(t + fade + 0.05)
     // Once the last one ends, cut every connection into it so nothing keeps
     // the swarm alive.
@@ -303,6 +377,7 @@ export function createChaos(out: AudioNode, knobs: Knobs, envelope: Envelope, ta
         offset.disconnect()
       })
       s.envs.forEach((e) => e.disconnect())
+      s.filter.disconnect()
       stats.oscillators -= s.oscs.length
     }
   }
