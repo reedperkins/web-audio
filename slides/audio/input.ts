@@ -131,12 +131,21 @@ function watch(access: MIDIAccess) {
   midi.status = 'ready'
 }
 
+// Asks for MIDI access and starts listening. Runs once on load; the settings
+// chips on the first slide call it again to re-ask.
+export function requestMidi() {
+  if (!navigator.requestMIDIAccess) {
+    midi.status = 'unsupported'
+    return Promise.resolve()
+  }
+  return navigator.requestMIDIAccess().then(watch, () => {
+    midi.status = 'denied'
+  })
+}
+
 // Always listening, from the moment the deck loads, so a keyboard plugged in
 // mid-talk just works.
-if (typeof navigator !== 'undefined') {
-  if (!navigator.requestMIDIAccess) midi.status = 'unsupported'
-  else navigator.requestMIDIAccess().then(watch, () => (midi.status = 'denied'))
-}
+if (typeof navigator !== 'undefined') requestMidi()
 
 const NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B']
 // 60 → "C4" (middle C).
