@@ -1,12 +1,15 @@
 import type { Envelope } from './envelope'
+import type { FilterSettings } from './filter'
+import { OPEN } from './filter'
 import type { Step } from './sequencer'
 
 // The song presets on the "Wave types" slide: each one sets the synth's wave
-// and envelope, then loops a melody through the sequencer.
+// envelope and filter, then loops a melody through the sequencer.
 export interface Song {
   name: string
   wave: OscillatorType
   env: Envelope
+  filter: FilterSettings
   bpm: number
   steps: Step[]
 }
@@ -27,7 +30,8 @@ function melody(text: string): Step[] {
 
 const third = 1 / 3
 
-// PLACEHOLDER(refine): melodies, tempos and envelopes, tune by ear
+// PLACEHOLDER(refine): melodies, tempos, envelopes and filters, tune by ear.
+// The filters are wide open, so the songs sound as they did before the filter.
 export const songs: Song[] = [
   {
     // The NES overworld theme. A square wave with an envelope that's nearly a
@@ -35,6 +39,7 @@ export const songs: Song[] = [
     name: 'Zelda',
     wave: 'square',
     env: { attack: 0.003, decay: 0.12, sustain: 0.6, release: 0.03 },
+    filter: OPEN,
     bpm: 150,
     steps: melody(`
       Bb4:2 F4:1.5 Bb4:.5
@@ -51,6 +56,7 @@ export const songs: Song[] = [
     name: 'Mountain King',
     wave: 'sawtooth',
     env: { attack: 0.005, decay: 0.15, sustain: 0.4, release: 0.08 },
+    filter: OPEN,
     bpm: 160,
     steps: melody(`
       A3:.5 B3:.5 C4:.5 D4:.5 E4:.5 C4:.5 E4:1
@@ -65,6 +71,7 @@ export const songs: Song[] = [
     name: 'Harry Potter',
     wave: 'sine',
     env: { attack: 0.005, decay: 0.6, sustain: 0.2, release: 0.5 },
+    filter: OPEN,
     bpm: 160,
     steps: melody(`
       B4:1

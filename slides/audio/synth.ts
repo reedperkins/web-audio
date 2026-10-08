@@ -1,12 +1,14 @@
 import { ref } from 'vue'
 import { ctx } from './audio'
 import { env, noteOff, noteOn } from './envelope'
+import { voiceFilter } from './filter'
 import { onNote } from './input'
 import { mtof } from './mtof'
 
 // The shared synth. `Voice`, `keyDown` and `keyUp` are the code on the "One
-// voice per key" and "Polyphony" slides; the only difference is that voices
-// connect to `bus` instead of `ctx.destination`.
+// voice per key" and "Polyphony" slides, plus the filter from the "Carve it"
+// slide (wide open until then), and voices connect to `bus` instead of
+// `ctx.destination`.
 //
 // MIDI and the on-screen keyboard always play it, but it's silent until a
 // slide points it at its `out` with `playInto`.
@@ -32,16 +34,19 @@ export const wave = ref<OscillatorType>('sine')
 class Voice {
   osc: OscillatorNode
   amp: GainNode
+  filter: ReturnType<typeof voiceFilter>
   constructor(frequency: number) {
     this.osc = new OscillatorNode(ctx, { type: wave.value, frequency })
     this.amp = new GainNode(ctx, { gain: 0 })
-    this.osc.connect(this.amp).connect(bus)
+    this.filter = voiceFilter(frequency, ctx.currentTime, this.osc)
+    this.osc.connect(this.filter.node).connect(this.amp).connect(bus)
     noteOn(this.amp.gain, ctx.currentTime)
     this.osc.start()
   }
   release() {
     const t = ctx.currentTime
     noteOff(this.amp.gain, t)
+    this.filter.release(t)
     this.osc.stop(t + env.release)
   }
 }

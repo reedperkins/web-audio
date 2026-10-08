@@ -4,9 +4,18 @@ import { vNoFocus } from '../audio/useDemo'
 // A labeled range input: <Slider v-model="level" label="gain" />
 // Size it from the parent with `--slider-width` (the track) and
 // `--slider-value-width` (room for the readout, so it doesn't jump).
+// `--slider-color` colors the track (default `--accent`).
+// `format` replaces the readout's text, e.g. to show Hz for a log position.
 const value = defineModel<number>({ required: true })
 withDefaults(
-  defineProps<{ label?: string; min?: number; max?: number; step?: number; digits?: number }>(),
+  defineProps<{
+    label?: string
+    min?: number
+    max?: number
+    step?: number
+    digits?: number
+    format?: (value: number) => string
+  }>(),
   {
     min: 0,
     max: 1,
@@ -28,7 +37,7 @@ withDefaults(
       :max="max"
       :step="step"
     >
-    <output class="slider-value">{{ value.toFixed(digits) }}</output>
+    <output class="slider-value">{{ format ? format(value) : value.toFixed(digits) }}</output>
   </label>
 </template>
 
@@ -52,11 +61,12 @@ withDefaults(
 
 input {
   width: var(--slider-width, 9em);
-  accent-color: var(--accent);
+  accent-color: var(--slider-color, var(--accent));
   cursor: pointer;
 }
 
 .slider-value {
   min-width: var(--slider-value-width, 3ch);
+  white-space: nowrap;
 }
 </style>

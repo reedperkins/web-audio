@@ -3,13 +3,13 @@ import { computed, ref, shallowRef } from 'vue'
 import { analyser, unlock } from '../audio/audio'
 import type { Envelope } from '../audio/envelope'
 import { env } from '../audio/envelope'
+import { filter } from '../audio/filter'
 import { pressKey, releaseKey } from '../audio/input'
 import { playSequence } from '../audio/sequencer'
 import type { Song } from '../audio/songs'
 import { songs } from '../audio/songs'
 import { playInto, releaseAll, wave } from '../audio/synth'
 import { useDemo } from '../audio/useDemo'
-import { duration } from '../lib/format'
 
 // The "Wave types" demo: the synth's settings drawn as its audio graph.
 // OscillatorNode picks the wave, GainNode holds the envelope, and the
@@ -48,13 +48,6 @@ const envModel = computed({
   get: () => ({ ...env }),
   set: (value: Envelope) => Object.assign(env, value),
 })
-
-const envValues = computed(() => [
-  { key: 'A', value: duration(env.attack) },
-  { key: 'D', value: duration(env.decay) },
-  { key: 'S', value: env.sustain.toFixed(2) },
-  { key: 'R', value: duration(env.release) },
-])
 
 function enter() {
   active.value = true
@@ -99,6 +92,7 @@ async function toggle(song: Song) {
   endPreview()
   wave.value = song.wave
   Object.assign(env, song.env)
+  Object.assign(filter, song.filter)
   await unlock()
   // Left the slide, or another click got there first, while unlocking.
   if (!active.value || stopSong) return
@@ -116,9 +110,6 @@ async function toggle(song: Song) {
       <template #amp>
         <div class="sub">envelope on <code>gain</code></div>
         <AdsrEditor v-model="envModel" class="adsr" compact @commit="preview" />
-        <div class="env-values">
-          <span v-for="v in envValues" :key="v.key"><b>{{ v.key }}</b> {{ v.value }}</span>
-        </div>
       </template>
       <template #out>
         <div class="sub">speakers</div>
@@ -172,22 +163,9 @@ async function toggle(song: Song) {
   font-size: 1em;
 }
 
-/* Small here, so it's compact; the values go in a line below. */
+/* Compact: the A D S R letters only, as on every other slide. */
 .adsr {
   margin-top: -0.4rem;
-}
-
-.env-values {
-  display: flex;
-  gap: 0.9rem;
-  margin-top: -0.4rem;
-  color: var(--muted);
-  font-family: var(--font-mono);
-  font-size: 0.6rem;
-}
-
-.env-values b {
-  color: var(--ink);
 }
 
 .scope {

@@ -15,6 +15,8 @@
   --wire: #9a9a94;
   /* Where grains overlap, in the grain pictures. */
   --overlap: #f5c400;
+  /* The filter's envelope, so it reads apart from the volume's. */
+  --filter: #1c7ed6;
 
   --font-display: system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;

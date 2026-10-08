@@ -9,9 +9,17 @@ import { duration } from '../lib/format'
 // (level) and release (time). Emits `commit` when a handle is let go.
 // `playhead` draws a dot where a playing note is in its envelope. `compact`
 // is for small sizes: only the A D S R letters, drawn bigger, no values or
-// key labels.
+// key labels. `width` trims the drawing's right edge (the full drawing is
+// 1000 wide; compact editors default to COMPACT_WIDTH), for small sizes where
+// the longest releases aren't needed; the editor keeps its height, so it draws
+// bigger in the same width.
+// `--adsr-color` sets the curve and handle color (default `--accent`).
 const model = defineModel<Envelope>({ required: true })
-const props = defineProps<{ playhead?: EnvelopePosition | null; compact?: boolean }>()
+const props = defineProps<{ playhead?: EnvelopePosition | null; compact?: boolean; width?: number }>()
+// Room for every preset's release, without the empty stretch the longest
+// ones need.
+const COMPACT_WIDTH = 720
+const width = computed(() => props.width ?? (props.compact ? COMPACT_WIDTH : 1000))
 const emit = defineEmits<{ commit: [] }>()
 
 // PLACEHOLDER(refine): ADSR editor geometry and look
@@ -126,14 +134,14 @@ function drop() {
     ref="svg"
     class="adsr-editor"
     :class="{ dragging, compact }"
-    viewBox="0 0 1000 320"
+    :viewBox="`0 0 ${width} 320`"
     role="img"
     aria-label="Envelope editor: attack, decay, sustain, release"
     @pointermove="move"
     @pointerup="drop"
     @pointercancel="drop"
   >
-    <line :x1="X0" :y1="BASE" x2="990" :y2="BASE" class="axis" />
+    <line :x1="X0" :y1="BASE" :x2="width - 10" :y2="BASE" class="axis" />
     <line :x1="X0" :y1="BASE" :x2="X0" y2="10" class="axis" />
     <line :x1="pts.xS" y1="20" :x2="pts.xS" :y2="BASE" class="marker" />
     <template v-if="!compact">
@@ -201,12 +209,12 @@ function drop() {
 }
 
 .area {
-  fill: color-mix(in srgb, var(--accent) 10%, transparent);
+  fill: color-mix(in srgb, var(--adsr-color, var(--accent)) 10%, transparent);
 }
 
 .trace {
   fill: none;
-  stroke: var(--accent);
+  stroke: var(--adsr-color, var(--accent));
   stroke-width: 5;
   stroke-linejoin: round;
 }
@@ -269,14 +277,14 @@ function drop() {
 
 .dot {
   fill: var(--bg);
-  stroke: var(--accent);
+  stroke: var(--adsr-color, var(--accent));
   stroke-width: 4;
   transition: r 0.1s;
 }
 
 .handle:hover .dot,
 .handle.held .dot {
-  fill: var(--accent);
+  fill: var(--adsr-color, var(--accent));
   r: 15;
 }
 
@@ -290,7 +298,7 @@ function drop() {
 }
 
 .grip {
-  stroke: var(--accent);
+  stroke: var(--adsr-color, var(--accent));
   stroke-width: 3;
   stroke-linecap: round;
 }
@@ -302,7 +310,7 @@ function drop() {
 
 .chevrons {
   fill: none;
-  stroke: var(--accent);
+  stroke: var(--adsr-color, var(--accent));
   stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;

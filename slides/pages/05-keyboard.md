@@ -106,3 +106,14 @@ const osc = new OscillatorNode(ctx, { type: wave, frequency })
 ::demo::
 
 <WaveDemo />
+
+---
+layout: code
+clicks: 2
+---
+
+# Carve it: filters
+
+::demo::
+
+<FilterDemo :env-at="1" :wah-at="2" />

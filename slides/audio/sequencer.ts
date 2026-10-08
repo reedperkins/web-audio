@@ -1,5 +1,6 @@
 import { ctx } from './audio'
 import { env, noteOff, noteOn } from './envelope'
+import { voiceFilter } from './filter'
 import { mtof } from './mtof'
 import { wave } from './synth'
 
@@ -34,11 +35,14 @@ export function playSequence(steps: Step[], bpm: number, into: AudioNode) {
   let next = ctx.currentTime + 0.05
 
   function play(note: number, t: number, hold: number) {
-    const osc = new OscillatorNode(ctx, { type: wave.value, frequency: mtof(note) })
+    const frequency = mtof(note)
+    const osc = new OscillatorNode(ctx, { type: wave.value, frequency })
     const amp = new GainNode(ctx, { gain: 0 })
-    osc.connect(amp).connect(into)
+    const filter = voiceFilter(frequency, t, osc)
+    osc.connect(filter.node).connect(amp).connect(into)
     noteOn(amp.gain, t)
     noteOff(amp.gain, t + hold)
+    filter.release(t + hold)
     osc.start(t)
     osc.stop(t + hold + env.release)
     const voice = { osc, amp }
