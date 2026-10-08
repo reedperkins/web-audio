@@ -4,7 +4,8 @@ layout: code
 
 # baby steps...
 
-```js {1|2|3-4|all}
+```js {1|2|3|4-5|all}
+const ctx = new AudioContext()
 const osc = new OscillatorNode(ctx, { frequency: 440 })
 osc.connect(ctx.destination)
 osc.start()
@@ -13,9 +14,10 @@ osc.stop(ctx.currentTime + 1)
 
 ::aside::
 
-<StepNote :at="0">A <b>source</b>: a tone at 440 Hz.</StepNote>
-<StepNote :at="1">A <b>wire</b> to the <b>destination</b>: your speakers.</StepNote>
-<StepNote :at="2">Start now. Stop one second from now.</StepNote>
+<StepNote :at="0">The <b>context</b>: the audio graph. One is usually all you need.</StepNote>
+<StepNote :at="1">A <b>source</b>: a tone at 440 Hz.</StepNote>
+<StepNote :at="2">A <b>wire</b> to the <b>destination</b>: your speakers.</StepNote>
+<StepNote :at="3">Start now. Stop one second from now.</StepNote>
 
 ::demo::
 
