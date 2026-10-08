@@ -110,6 +110,7 @@ function keyUp(note) {
 
 ---
 layout: code
+keyboard: true
 ---
 
 # Surf's up!
@@ -124,6 +125,7 @@ const osc = new OscillatorNode(ctx, { type: wave, frequency })
 
 ---
 layout: code
+keyboard: true
 ---
 
 # Freq-y Friday

@@ -4,13 +4,11 @@ import { useNav } from '@slidev/client'
 import KeyboardDrawer from './components/KeyboardDrawer.vue'
 
 // Drawn over every slide, inside the scaled stage. The backup keyboard shows
-// from the first slide with `keyboard: true` in its frontmatter onward.
-const { slides, currentSlideNo } = useNav()
-const firstKeyboardSlide = computed(() =>
-  slides.value.find((s) => s.meta?.slide?.frontmatter?.keyboard)?.no ?? Infinity,
-)
+// only on slides with `keyboard: true` in their frontmatter.
+const { currentSlideRoute } = useNav()
+const showKeyboard = computed(() => !!currentSlideRoute.value?.meta?.slide?.frontmatter?.keyboard)
 </script>
 
 <template>
-  <KeyboardDrawer v-if="currentSlideNo >= firstKeyboardSlide" />
+  <KeyboardDrawer v-if="showKeyboard" />
 </template>
