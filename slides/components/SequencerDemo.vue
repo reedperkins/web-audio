@@ -128,7 +128,7 @@ onUnmounted(() => {
       <ToggleChip class="tune" :on="jazz" @click="jazz = !jazz">
         ♪ jazz
       </ToggleChip>
-      <span class="key">{{ shown.key }}<template v-if="upcoming !== null"> · next: {{ variations[upcoming].name }}</template></span>
+      <span class="key">{{ shown.key }}<template v-if="upcoming !== null"> → {{ variations[upcoming].name }}</template></span>
     </div>
 
     <div class="grid">
@@ -203,6 +203,9 @@ onUnmounted(() => {
 
 .key {
   margin-left: auto;
+  /* One line, so the demo's height (and the centered title above it)
+     doesn't change when a tune is queued. */
+  white-space: nowrap;
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: var(--size-small);

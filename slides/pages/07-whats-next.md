@@ -7,15 +7,15 @@
 <div class="next">
   <figure>
     <img src="/images/vocoder.jpg" alt="A vocoder plugin with a bar graph of 40 frequency bands">
-    <figcaption><b>Vocoder</b>Your voice, played through the synth we just built.</figcaption>
+    <figcaption><b>Vocoder</b>Become Daft Punk</figcaption>
   </figure>
   <figure>
     <img src="/images/granular.png" alt="A waveform editor with a drum loop sliced into numbered pieces">
-    <figcaption><b>Granular synthesis</b>Chop sound into tiny grains and scatter them.</figcaption>
+    <figcaption><b>Granular synthesis</b>More formal version of the chaos synth</figcaption>
   </figure>
   <figure>
     <img src="/images/tone-of-life.png" alt="Tone of Life: a Game of Life grid with Start, Stop and Step buttons">
-    <figcaption><b>Tone of Life</b>Music from emergent behavior.<a v-no-focus class="credit" href="https://matthewbilyeu.com/tone-of-life.html" target="_blank">by Matthew Bilyeu · matthewbilyeu.com</a></figcaption>
+    <figcaption><b>Tone of Life</b>Music from emergent behavior<a v-no-focus class="credit" href="https://matthewbilyeu.com/tone-of-life.html" target="_blank">by Matthew Bilyeu · matthewbilyeu.com</a></figcaption>
   </figure>
 </div>
 
@@ -204,8 +204,9 @@
 <ol class="pontify">
   <li>Creating music involves expressing ourselves through an interface</li>
   <li>Software (+ hardware integration) lets us build basically any interface we want. This is an opportunity to think critically about the interfaces we design!</li>
-  <li>AI can build the tools. We still design them, master them, and make the music.</li>
-  <li>A whole instrument can ship as one HTML file. The Web Audio API makes that possible.</li>
+  <li>AI can build the tools. We get to design them, master them, and make the music</li>
+  <li>A whole instrument can ship as one HTML file. The Web Audio API makes that possible</li>
+  <li>So go build your musical dreams</li>
 </ol>
 
 <style>

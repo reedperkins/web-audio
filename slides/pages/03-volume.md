@@ -39,7 +39,7 @@ chord.forEach((frequency) => {
 })
 ```
 
-```js {2-3,6}
+```js {2-3,6|*}
 const chord = [261.63, 329.63, 392, 523.25]
 const volume = new GainNode(ctx, { gain: 0.2 })
 volume.connect(ctx.destination)

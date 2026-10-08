@@ -118,7 +118,7 @@ layout: code
 
 # Separation of Pitch and Speed
 
-Granular stretching: play the recording as short, overlapping grains that crossfade. Speed is where each grain reads from; pitch is its detune.
+Granular stretching: play the recording as short, overlapping "grains" that crossfade. Speed = how fast you step through the grains, pitch = detune for each grain.
 
 ::demo::
 
@@ -181,7 +181,7 @@ function noteOn(note) {
 layout: code
 ---
 
-# One knob, a thousand oscillators
+# Beehive state of mind
 
 ```js
 const spread = new ConstantSourceNode(ctx, { offset: 0 })
