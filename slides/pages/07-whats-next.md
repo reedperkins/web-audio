@@ -201,6 +201,7 @@
 
 # Pontifications
 
+<v-clicks>
 <ol class="pontify">
   <li>Creating music involves expressing ourselves through an interface</li>
   <li>Software (+ hardware integration) lets us build basically any interface we want. This is an opportunity to think critically about the interfaces we design!</li>
@@ -208,6 +209,7 @@
   <li>A whole instrument can ship as one HTML file. The Web Audio API makes that possible</li>
   <li>So go build your musical dreams</li>
 </ol>
+</v-clicks>
 
 <style>
 .pontify {
