@@ -231,6 +231,8 @@
 </style>
 
 ---
+hide: true
+---
 
 # Speaking of agentic tooling...
 
