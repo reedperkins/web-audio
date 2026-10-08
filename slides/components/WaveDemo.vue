@@ -34,7 +34,8 @@ let previewTimer: ReturnType<typeof setTimeout> | undefined
 let previewing = false
 
 const nodes = [
-  { key: 'osc', label: 'OscillatorNode', style: { width: '11rem' } },
+  // Only four tiles: fit them instead of stretching to the envelope's height.
+  { key: 'osc', label: 'OscillatorNode', style: { width: '11.75rem', alignSelf: 'center' } },
   { key: 'amp', label: 'GainNode', style: { flex: 1, minWidth: 0 } },
   { key: 'out', label: 'destination', style: { width: '9rem' } },
 ]
