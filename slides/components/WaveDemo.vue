@@ -110,7 +110,7 @@ async function toggle(song: Song) {
       </template>
       <template #amp>
         <div class="sub">envelope on <code>gain</code></div>
-        <AdsrEditor v-model="envModel" class="adsr" compact @commit="preview" />
+        <AdsrEditor v-model="envModel" class="adsr" compact center @commit="preview" />
       </template>
       <template #out>
         <div class="sub">speakers</div>

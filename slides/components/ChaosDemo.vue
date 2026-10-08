@@ -468,7 +468,7 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
       <div class="chaos-env-head">
         <span class="chaos-env-name">volume envelope</span>
       </div>
-      <AdsrEditor v-model="envModel" class="chaos-env-adsr" compact />
+      <AdsrEditor v-model="envModel" class="chaos-env-adsr" compact center />
     </div>
     <div class="chaos-env filter-env">
       <div class="chaos-env-head">
@@ -481,7 +481,7 @@ const perKey = computed(() => (voice.value ? `${densityOf(knobs.size)}/s` : size
           :format="octaves"
         />
       </div>
-      <AdsrEditor v-model="filterEnvModel" class="chaos-env-adsr" compact />
+      <AdsrEditor v-model="filterEnvModel" class="chaos-env-adsr" compact center />
     </div>
     <div class="chaos-take" :class="{ rec: recording }">
       <BufferView class="chaos-wave" :buffer="source.buffer" :version="source.version" />

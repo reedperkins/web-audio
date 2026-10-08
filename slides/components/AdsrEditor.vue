@@ -9,17 +9,15 @@ import { duration } from '../lib/format'
 // (level) and release (time). Emits `commit` when a handle is let go.
 // `playhead` draws a dot where a playing note is in its envelope. `compact`
 // is for small sizes: only the A D S R letters, drawn bigger, no values or
-// key labels. `width` trims the drawing's right edge (the full drawing is
-// 1000 wide; compact editors default to COMPACT_WIDTH), for small sizes where
-// the longest releases aren't needed; the editor keeps its height, so it draws
-// bigger in the same width.
+// key labels. `width` is the drawing's width (1000 by default; compact
+// editors default to COMPACT_WIDTH); the editor keeps its height, so a
+// narrower drawing is bigger in the same space. The time axis shrinks to fit
+// it, so the longest attack, decay and release stay inside.
 // `center` slides the drawing to the middle of its width; it holds still
 // while a handle is dragged and re-centers when it's let go.
 // `--adsr-color` sets the curve and handle color (default `--accent`).
 const model = defineModel<Envelope>({ required: true })
 const props = defineProps<{ playhead?: EnvelopePosition | null; compact?: boolean; width?: number; center?: boolean }>()
-// Room for every preset's release, without the empty stretch the longest
-// ones need.
 const COMPACT_WIDTH = 720
 const width = computed(() => props.width ?? (props.compact ? COMPACT_WIDTH : 1000))
 const emit = defineEmits<{ commit: [] }>()
@@ -29,13 +27,23 @@ const X0 = 40
 const TOP = 40
 const BASE = 250
 const HOLD = 150
-const WIDTH = { attack: 230, decay: 230, release: 300 }
+// Each time segment's length at its longest, before fitting to `width`.
+const SEGMENT = { attack: 230, decay: 230, release: 300 }
 // The time axis runs this far past the longest release (2 s), so dragging R
 // never changes its length.
 const TAIL = 20
+// Room past the axis for the R label, centered under the release handle.
+const LABEL_ROOM = 40
 
-const toPx = (seg: TimeSegment, t: number) => WIDTH[seg] * timeToFraction(seg, t)
-const toTime = (seg: TimeSegment, px: number) => fractionToTime(seg, px / WIDTH[seg])
+// Shrinks the segments so all three at their longest fit in `width`.
+const fit = computed(() => {
+  const room = width.value - X0 - HOLD - TAIL - LABEL_ROOM
+  return Math.min(1, room / (SEGMENT.attack + SEGMENT.decay + SEGMENT.release))
+})
+const segmentWidth = (seg: TimeSegment) => SEGMENT[seg] * fit.value
+
+const toPx = (seg: TimeSegment, t: number) => segmentWidth(seg) * timeToFraction(seg, t)
+const toTime = (seg: TimeSegment, px: number) => fractionToTime(seg, px / segmentWidth(seg))
 const yOf = (level: number) => BASE - level * (BASE - TOP)
 const levelOf = (y: number) => Math.min(1, Math.max(0, (BASE - y) / (BASE - TOP)))
 
@@ -109,9 +117,9 @@ const playheadPoint = computed(() => {
 const svg = ref<SVGSVGElement>()
 const dragging = ref<Handle | null>(null)
 
-const axisEnd = computed(() => pts.value.xS + WIDTH.release + TAIL)
+const axisEnd = computed(() => pts.value.xS + segmentWidth('release') + TAIL)
 // The drawing's right end: the axis, or the R label if it was pushed past.
-const right = computed(() => Math.max(axisEnd.value, labels.value[3].x + 40))
+const right = computed(() => Math.max(axisEnd.value, labels.value[3].x + LABEL_ROOM))
 // Frozen during a drag, so the handle stays under the pointer.
 const offset = ref(0)
 watchEffect(() => {
